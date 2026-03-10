@@ -1,0 +1,31 @@
+﻿<Window x:Class="Label_CRM_demo.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="MainWindow" Height="450" Width="800">
+
+    <Grid>
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Width="300">
+
+            <TextBlock Text="GHL"
+                       FontSize="28"
+                       FontWeight="Bold"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,10"/>
+
+            <TextBlock Text="Welcome to GHL Titan"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,20"/>
+
+            <TextBlock Text="Username"/>
+            <TextBox x:Name="UsernameBox" Height="30" Margin="0,5,0,10"/>
+
+            <TextBlock Text="Password"/>
+            <PasswordBox x:Name="PasswordBox" Height="30" Margin="0,5,0,20"/>
+
+            <Button Content="Submit"
+                    Height="35"
+                    Click="Submit_Click"/>
+
+        </StackPanel>
+    </Grid>
+</Window>
