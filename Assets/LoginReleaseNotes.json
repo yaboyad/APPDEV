@@ -1,0 +1,32 @@
+﻿[
+  {
+    "version": "v1.3",
+    "title": "Fullscreen shell refresh",
+    "publishedOn": "March 11, 2026",
+    "summary": "The login experience now behaves more like a living product surface instead of a one-off splash screen.",
+    "highlights": [
+      "The shell stays maximized while standard minimize and close controls remain available.",
+      "The login note area supports stacked release history so new features do not replace older updates."
+    ]
+  },
+  {
+    "version": "v1.2",
+    "title": "Workspace launch polish",
+    "publishedOn": "March 10, 2026",
+    "summary": "Startup and dashboard handoff were tuned to feel more intentional from the first second.",
+    "highlights": [
+      "The workspace opens maximized immediately after sign-in.",
+      "The main shell keeps the artist CRM layout sharp across larger desktop sizes."
+    ]
+  },
+  {
+    "version": "v1.1",
+    "title": "Local account protection",
+    "publishedOn": "March 10, 2026",
+    "summary": "Credential storage was moved into a protected local vault for the test environment.",
+    "highlights": [
+      "A credential vault is created on first launch for the current Windows account.",
+      "Passwords stay hashed and the local store remains encrypted on disk."
+    ]
+  }
+]

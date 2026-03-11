@@ -217,18 +217,110 @@
                                             </Grid.ColumnDefinitions>
 
                                             <StackPanel x:Name="ChangesPanel" Grid.Row="0" Grid.Column="0" Margin="0,0,12,0">
-                                                <TextBlock Text="Platform updates"
-                                                           Foreground="#F8FAFC"
-                                                           FontWeight="SemiBold"
-                                                           FontSize="15"/>
-                                                <TextBlock Margin="0,12,0,0"
-                                                           Text="- The shell now stays in full-screen mode while still keeping standard minimize and close controls available."
-                                                           Foreground="#94A3B8"
+                                                <DockPanel LastChildFill="False">
+                                                    <TextBlock Text="Platform updates"
+                                                               Foreground="#F8FAFC"
+                                                               FontWeight="SemiBold"
+                                                               FontSize="15"/>
+                                                    <Border DockPanel.Dock="Right"
+                                                            Padding="10,4"
+                                                            Background="#15334450"
+                                                            BorderBrush="#3D6478"
+                                                            BorderThickness="1"
+                                                            CornerRadius="999">
+                                                        <TextBlock Text="Version history"
+                                                                   Foreground="#DCE7EE"
+                                                                   FontSize="11.5"
+                                                                   FontWeight="SemiBold"/>
+                                                    </Border>
+                                                </DockPanel>
+                                                <TextBlock Margin="0,10,0,0"
+                                                           Text="Add a new entry to Assets/LoginReleaseNotes.json and older release notes will stay visible here."
+                                                           Foreground="#7DD7CB"
+                                                           FontSize="12.5"
+                                                           LineHeight="18"
                                                            TextWrapping="Wrap"/>
-                                                <TextBlock Margin="0,8,0,0"
-                                                           Text="- The workspace opens maximized immediately, so the interface feels finished from the first second."
-                                                           Foreground="#94A3B8"
-                                                           TextWrapping="Wrap"/>
+                                                <Border Margin="0,14,0,0"
+                                                        Padding="14"
+                                                        Background="#121B28"
+                                                        BorderBrush="#29465C"
+                                                        BorderThickness="1"
+                                                        CornerRadius="18">
+                                                    <ScrollViewer MaxHeight="286"
+                                                                  VerticalScrollBarVisibility="Auto"
+                                                                  HorizontalScrollBarVisibility="Disabled"
+                                                                  CanContentScroll="False">
+                                                        <ItemsControl x:Name="ReleaseNotesItemsControl">
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <Border Margin="0,0,0,12"
+                                                                            Padding="14"
+                                                                            Background="#132130"
+                                                                            BorderBrush="#274255"
+                                                                            BorderThickness="1"
+                                                                            CornerRadius="16">
+                                                                        <StackPanel>
+                                                                            <DockPanel Margin="0,0,0,4">
+                                                                                <Border DockPanel.Dock="Right"
+                                                                                        Padding="10,4"
+                                                                                        CornerRadius="999"
+                                                                                        Background="#18384A"
+                                                                                        BorderBrush="#3F6478"
+                                                                                        BorderThickness="1">
+                                                                                    <TextBlock Text="{Binding PublishedOn}"
+                                                                                               Foreground="#DDE8EE"
+                                                                                               FontSize="11.5"
+                                                                                               FontWeight="SemiBold"/>
+                                                                                </Border>
+                                                                                <StackPanel Margin="0,0,12,0">
+                                                                                    <TextBlock Text="{Binding Version}"
+                                                                                               Foreground="#F0B862"
+                                                                                               FontWeight="Bold"
+                                                                                               FontSize="13"/>
+                                                                                    <TextBlock Text="{Binding Title}"
+                                                                                               Margin="0,4,0,0"
+                                                                                               Foreground="#F8FAFC"
+                                                                                               FontWeight="SemiBold"
+                                                                                               FontSize="15"
+                                                                                               TextWrapping="Wrap"/>
+                                                                                </StackPanel>
+                                                                            </DockPanel>
+                                                                            <TextBlock Text="{Binding Summary}"
+                                                                                       Margin="0,6,0,0"
+                                                                                       Foreground="#9FB5C1"
+                                                                                       FontSize="12.5"
+                                                                                       LineHeight="19"
+                                                                                       TextWrapping="Wrap"/>
+                                                                            <ItemsControl Margin="0,10,0,0"
+                                                                                          ItemsSource="{Binding Highlights}">
+                                                                                <ItemsControl.ItemTemplate>
+                                                                                    <DataTemplate>
+                                                                                        <Grid Margin="0,0,0,6">
+                                                                                            <Grid.ColumnDefinitions>
+                                                                                                <ColumnDefinition Width="Auto"/>
+                                                                                                <ColumnDefinition Width="*"/>
+                                                                                            </Grid.ColumnDefinitions>
+                                                                                            <TextBlock Text="-"
+                                                                                                       Margin="0,0,10,0"
+                                                                                                       Foreground="#70E1D1"
+                                                                                                       FontWeight="Bold"/>
+                                                                                            <TextBlock Grid.Column="1"
+                                                                                                       Text="{Binding}"
+                                                                                                       Foreground="#CBD5E1"
+                                                                                                       FontSize="12.5"
+                                                                                                       LineHeight="19"
+                                                                                                       TextWrapping="Wrap"/>
+                                                                                        </Grid>
+                                                                                    </DataTemplate>
+                                                                                </ItemsControl.ItemTemplate>
+                                                                            </ItemsControl>
+                                                                        </StackPanel>
+                                                                    </Border>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </ScrollViewer>
+                                                </Border>
                                             </StackPanel>
 
                                             <StackPanel x:Name="SecurityPanel" Grid.Row="0" Grid.Column="1" Margin="12,0,0,0">
@@ -242,6 +334,10 @@
                                                            TextWrapping="Wrap"/>
                                                 <TextBlock Margin="0,8,0,0"
                                                            Text="- Passwords stay hashed and the local store remains encrypted on disk."
+                                                           Foreground="#94A3B8"
+                                                           TextWrapping="Wrap"/>
+                                                <TextBlock Margin="0,8,0,0"
+                                                           Text="- Release history is now driven by a local JSON file so new features can stack above older versions."
                                                            Foreground="#94A3B8"
                                                            TextWrapping="Wrap"/>
                                             </StackPanel>

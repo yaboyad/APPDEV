@@ -1,76 +1,86 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 
-namespace Label_CRM_demo
+namespace Label_CRM_demo;
+
+public static class WindowManager
 {
-    public static class WindowManager
+    private static readonly Dictionary<object, Window> OpenWindows = new Dictionary<object, Window>();
+
+    public static void ShowOrFocus<T>(Window? owner = null) where T : Window, new()
+        => ShowOrFocus(typeof(T), () => new T(), owner);
+
+    public static void ShowOrFocus(object key, Func<Window> factory, Window? owner = null)
     {
-        // Keeps one instance per window type
-        private static readonly Dictionary<Type, Window> _open = new Dictionary<Type, Window>();
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(factory);
 
-        /// <summary>
-        /// Open window T if not open. If already open, bring it to front ("snap").
-        /// </summary>
-        public static void ShowOrFocus<T>(Window? owner = null) where T : Window, new()
+        if (OpenWindows.TryGetValue(key, out var existing) && existing is not null)
         {
-            var type = typeof(T);
-
-            // If already open -> focus it
-            if (_open.TryGetValue(type, out var existing) && existing != null)
-            {
-                if (!existing.IsVisible)
-                {
-                    existing.Show();
-                }
-
-                if (existing.WindowState == WindowState.Minimized)
-                    existing.WindowState = WindowState.Normal;
-
-                existing.Activate();
-
-                // "snap" to front
-                existing.Topmost = true;
-                existing.Topmost = false;
-
-                existing.Focus();
-                return;
-            }
-
-            // Not open -> create and show
-            var win = new T();
-
-            if (owner != null)
-            {
-                win.Owner = owner;
-                win.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            }
-            else
-            {
-                win.WindowStartupLocation = WindowStartupLocation.CenterScreen;
-            }
-
-            // When it closes, remove from dictionary
-            win.Closed += (_, __) => _open.Remove(type);
-
-            _open[type] = win;
-            win.Show();
-            win.Activate();
+            FocusWindow(existing);
+            return;
         }
 
-        /// <summary>
-        /// Close all tracked windows (optional helper).
-        /// </summary>
-        public static void CloseAll()
+        var window = factory();
+        ConfigureOwner(window, owner);
+
+        window.Closed += (_, _) => OpenWindows.Remove(key);
+
+        OpenWindows[key] = window;
+        window.Show();
+        FocusWindow(window);
+    }
+
+    public static void CloseAll()
+    {
+        foreach (var window in OpenWindows.Values.ToList())
         {
-            foreach (var window in _open.Values.ToList())
+            try
             {
-                try { window?.Close(); }
-                catch { /* ignore */ }
+                window.Close();
+            }
+            catch
+            {
+                // Keep shutdown resilient even if one child window fails.
+            }
+        }
+
+        OpenWindows.Clear();
+    }
+
+    private static void ConfigureOwner(Window window, Window? owner)
+    {
+        if (owner is null)
+        {
+            if (window.WindowStartupLocation == WindowStartupLocation.Manual)
+            {
+                window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
             }
 
-            _open.Clear();
+            return;
         }
+
+        window.Owner = owner;
+        window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+    }
+
+    private static void FocusWindow(Window window)
+    {
+        if (!window.IsVisible)
+        {
+            window.Show();
+        }
+
+        if (window.WindowState == WindowState.Minimized)
+        {
+            window.WindowState = WindowState.Normal;
+        }
+
+        window.Activate();
+        window.Topmost = true;
+        window.Topmost = false;
+        window.Focus();
     }
 }

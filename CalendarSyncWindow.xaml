@@ -1,0 +1,430 @@
+﻿<local:SnapWindow x:Class="Label_CRM_demo.CalendarSyncWindow"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:local="clr-namespace:Label_CRM_demo"
+                  Title="Calendar Sync Center"
+                  Height="900"
+                  Width="1340"
+                  MinHeight="820"
+                  MinWidth="1160"
+                  Background="#07131F"
+                  Icon="Assets/Titan.ico">
+    <local:SnapWindow.Resources>
+        <LinearGradientBrush x:Key="WindowBackground" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#07131F" Offset="0.0"/>
+            <GradientStop Color="#0B1A26" Offset="0.46"/>
+            <GradientStop Color="#163445" Offset="1.0"/>
+        </LinearGradientBrush>
+
+        <Style x:Key="GlassCard" TargetType="Border">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#D9172531" Offset="0.0"/>
+                        <GradientStop Color="#C90E1821" Offset="1.0"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderBrush" Value="#294960"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="22"/>
+            <Setter Property="Padding" Value="22"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="28" ShadowDepth="0" Color="#77000000" Opacity="0.32"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SecondaryButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="46"/>
+            <Setter Property="Padding" Value="18,12"/>
+            <Setter Property="Foreground" Value="#EDF7FB"/>
+            <Setter Property="Background" Value="#101D27"/>
+            <Setter Property="BorderBrush" Value="#315266"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Chrome"
+                                CornerRadius="14"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="#162734"/>
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="#4B7084"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="#19303E"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Chrome" Property="Opacity" Value="0.6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="DangerButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
+            <Setter Property="Background" Value="#3B0F14"/>
+            <Setter Property="BorderBrush" Value="#9F3643"/>
+            <Setter Property="Foreground" Value="#FFE4E7"/>
+        </Style>
+
+        <Style x:Key="LargeTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource TitanInputTextBoxStyle}">
+            <Setter Property="Height" Value="108"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="AcceptsReturn" Value="True"/>
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="VerticalContentAlignment" Value="Top"/>
+            <Setter Property="Padding" Value="14,12"/>
+        </Style>
+
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="#00000000"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="GridLinesVisibility" Value="None"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="AlternationCount" Value="2"/>
+            <Setter Property="RowBackground" Value="#11000000"/>
+            <Setter Property="AlternatingRowBackground" Value="#16000000"/>
+            <Setter Property="Foreground" Value="#F3F9FC"/>
+            <Setter Property="SelectionMode" Value="Single"/>
+        </Style>
+
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#172734"/>
+            <Setter Property="Foreground" Value="#9FB5C1"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="BorderBrush" Value="#294960"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+    </local:SnapWindow.Resources>
+
+    <Grid Background="{StaticResource WindowBackground}">
+        <Canvas IsHitTestVisible="False">
+            <Ellipse Width="420" Height="420" Opacity="0.22">
+                <Ellipse.Fill>
+                    <RadialGradientBrush>
+                        <GradientStop Color="#4FD1C5" Offset="0.0"/>
+                        <GradientStop Color="#004FD1C5" Offset="1.0"/>
+                    </RadialGradientBrush>
+                </Ellipse.Fill>
+                <Ellipse.Effect>
+                    <BlurEffect Radius="120"/>
+                </Ellipse.Effect>
+                <Ellipse.RenderTransform>
+                    <TranslateTransform X="-110" Y="40"/>
+                </Ellipse.RenderTransform>
+            </Ellipse>
+
+            <Ellipse Width="340" Height="340" Opacity="0.18">
+                <Ellipse.Fill>
+                    <RadialGradientBrush>
+                        <GradientStop Color="#F59E0B" Offset="0.0"/>
+                        <GradientStop Color="#00F59E0B" Offset="1.0"/>
+                    </RadialGradientBrush>
+                </Ellipse.Fill>
+                <Ellipse.Effect>
+                    <BlurEffect Radius="110"/>
+                </Ellipse.Effect>
+                <Ellipse.RenderTransform>
+                    <TranslateTransform X="1010" Y="560"/>
+                </Ellipse.RenderTransform>
+            </Ellipse>
+        </Canvas>
+
+        <ScrollViewer x:Name="ContentScroller" VerticalScrollBarVisibility="Auto">
+            <Grid Margin="20">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Border x:Name="HeaderCard" Style="{StaticResource GlassCard}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="320"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="28" Height="4" Margin="0,0,12,0" CornerRadius="2" Background="#70E1D1" VerticalAlignment="Center"/>
+                                <TextBlock Text="Calendar sync center"
+                                           Style="{StaticResource TitanEyebrowTextStyle}"/>
+                            </StackPanel>
+
+                            <TextBlock Margin="0,18,0,0"
+                                       Foreground="#F6FBFD"
+                                       FontSize="34"
+                                       FontWeight="Bold"
+                                       Text="Manage local CRM events and sync them with Google Calendar and Apple Calendar."/>
+                            <TextBlock Margin="0,10,0,0"
+                                       Foreground="#B9CED8"
+                                       FontSize="15"
+                                       TextWrapping="Wrap"
+                                       Text="Google uses an OAuth desktop app client ID. Apple uses your iCloud email and an app-specific password over CalDAV. Every import merges into the same local calendar store first, so the dashboard preview stays in one place."/>
+                        </StackPanel>
+
+                        <Border Grid.Column="1"
+                                Margin="22,0,0,0"
+                                Padding="18"
+                                CornerRadius="18"
+                                Background="#101A23"
+                                BorderBrush="#315266"
+                                BorderThickness="1">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Width="24" Height="4" Margin="0,0,10,0" CornerRadius="2" Background="#F0B862" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Local store"
+                                               Style="{StaticResource TitanEyebrowTextStyle}"/>
+                                </StackPanel>
+                                <TextBlock x:Name="LocalSummaryText"
+                                           Margin="0,12,0,0"
+                                           Foreground="#DDEBF1"
+                                           TextWrapping="Wrap"
+                                           LineHeight="22"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <Grid Grid.Row="1" Margin="0,18,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border x:Name="GoogleCard" Style="{StaticResource GlassCard}" Margin="0,0,12,0">
+                        <StackPanel>
+                            <TextBlock Text="Google Calendar"
+                                       Style="{StaticResource TitanSectionTitleTextStyle}"/>
+                            <TextBlock Margin="0,8,0,16"
+                                       Text="Connect a Google OAuth desktop app and import or export events against the calendar ID you choose. Most people can leave the calendar ID as primary."
+                                       Style="{StaticResource TitanMutedBodyTextStyle}"/>
+
+                            <TextBlock Text="Google Client ID"
+                                       Style="{StaticResource TitanFieldLabelTextStyle}"/>
+                            <TextBox x:Name="GoogleClientIdBox"
+                                     Margin="0,8,0,14"
+                                     Style="{StaticResource TitanInputTextBoxStyle}"/>
+
+                            <TextBlock Text="Calendar ID"
+                                       Style="{StaticResource TitanFieldLabelTextStyle}"/>
+                            <TextBox x:Name="GoogleCalendarIdBox"
+                                     Margin="0,8,0,14"
+                                     Style="{StaticResource TitanInputTextBoxStyle}"
+                                     Text="primary"/>
+
+                            <TextBlock x:Name="GoogleSummaryText"
+                                       Foreground="#DDEBF1"
+                                       TextWrapping="Wrap"
+                                       LineHeight="22"/>
+
+                            <UniformGrid Margin="0,18,0,0" Columns="3">
+                                <Button x:Name="ConnectGoogleButton"
+                                        Margin="0,0,12,0"
+                                        Content="Connect"
+                                        Click="ConnectGoogle_Click"
+                                        Style="{StaticResource TitanPrimaryButtonStyle}"/>
+                                <Button x:Name="PullGoogleButton"
+                                        Margin="0,0,12,0"
+                                        Content="Import"
+                                        Click="PullGoogle_Click"
+                                        Style="{StaticResource SecondaryButtonStyle}"/>
+                                <Button x:Name="PushGoogleButton"
+                                        Content="Export"
+                                        Click="PushGoogle_Click"
+                                        Style="{StaticResource SecondaryButtonStyle}"/>
+                            </UniformGrid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border x:Name="AppleCard" Grid.Column="1" Style="{StaticResource GlassCard}" Margin="12,0,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Apple Calendar"
+                                       Style="{StaticResource TitanSectionTitleTextStyle}"/>
+                            <TextBlock Margin="0,8,0,16"
+                                       Text="Connect your iCloud calendar with your Apple ID email and an app-specific password. The app discovers your calendar collection over CalDAV, then you can import or export CRM events."
+                                       Style="{StaticResource TitanMutedBodyTextStyle}"/>
+
+                            <TextBlock Text="Apple ID Email"
+                                       Style="{StaticResource TitanFieldLabelTextStyle}"/>
+                            <TextBox x:Name="AppleIdBox"
+                                     Margin="0,8,0,14"
+                                     Style="{StaticResource TitanInputTextBoxStyle}"/>
+
+                            <TextBlock Text="App-Specific Password"
+                                       Style="{StaticResource TitanFieldLabelTextStyle}"/>
+                            <PasswordBox x:Name="ApplePasswordBox"
+                                         Margin="0,8,0,14"
+                                         Style="{StaticResource TitanInputPasswordBoxStyle}"/>
+
+                            <TextBlock x:Name="AppleSummaryText"
+                                       Foreground="#DDEBF1"
+                                       TextWrapping="Wrap"
+                                       LineHeight="22"/>
+
+                            <UniformGrid Margin="0,18,0,0" Columns="3">
+                                <Button x:Name="ConnectAppleButton"
+                                        Margin="0,0,12,0"
+                                        Content="Connect"
+                                        Click="ConnectApple_Click"
+                                        Style="{StaticResource TitanPrimaryButtonStyle}"/>
+                                <Button x:Name="PullAppleButton"
+                                        Margin="0,0,12,0"
+                                        Content="Import"
+                                        Click="PullApple_Click"
+                                        Style="{StaticResource SecondaryButtonStyle}"/>
+                                <Button x:Name="PushAppleButton"
+                                        Content="Export"
+                                        Click="PushApple_Click"
+                                        Style="{StaticResource SecondaryButtonStyle}"/>
+                            </UniformGrid>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <Border x:Name="ComposerCard" Grid.Row="2" Margin="0,18,0,0" Style="{StaticResource GlassCard}">
+                    <StackPanel>
+                        <TextBlock Text="Event editor"
+                                   Style="{StaticResource TitanSectionTitleTextStyle}"/>
+                        <TextBlock Margin="0,8,0,18"
+                                   Text="Add a new event or click an existing row below to update it before syncing back out. Date and time values use your local machine time zone."
+                                   Style="{StaticResource TitanMutedBodyTextStyle}"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel>
+                                <TextBlock Text="Title"
+                                           Style="{StaticResource TitanFieldLabelTextStyle}"/>
+                                <TextBox x:Name="EventTitleBox"
+                                         Margin="0,8,12,0"
+                                         Style="{StaticResource TitanInputTextBoxStyle}"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="Category"
+                                           Style="{StaticResource TitanFieldLabelTextStyle}"/>
+                                <TextBox x:Name="EventCategoryBox"
+                                         Margin="0,8,12,0"
+                                         Style="{StaticResource TitanInputTextBoxStyle}"
+                                         Text="Task"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Location"
+                                           Style="{StaticResource TitanFieldLabelTextStyle}"/>
+                                <TextBox x:Name="EventLocationBox"
+                                         Margin="0,8,0,0"
+                                         Style="{StaticResource TitanInputTextBoxStyle}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid Margin="0,16,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel>
+                                <TextBlock Text="Start (example: 3/14/2026 2:00 PM)"
+                                           Style="{StaticResource TitanFieldLabelTextStyle}"/>
+                                <TextBox x:Name="EventStartBox"
+                                         Margin="0,8,12,0"
+                                         Style="{StaticResource TitanInputTextBoxStyle}"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="End (example: 3/14/2026 3:00 PM)"
+                                           Style="{StaticResource TitanFieldLabelTextStyle}"/>
+                                <TextBox x:Name="EventEndBox"
+                                         Margin="0,8,0,0"
+                                         Style="{StaticResource TitanInputTextBoxStyle}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Margin="0,16,0,0"
+                                   Text="Description"
+                                   Style="{StaticResource TitanFieldLabelTextStyle}"/>
+                        <TextBox x:Name="EventDescriptionBox"
+                                 Margin="0,8,0,0"
+                                 Style="{StaticResource LargeTextBoxStyle}"/>
+
+                        <UniformGrid Margin="0,18,0,0" Columns="3">
+                            <Button x:Name="SaveEventButton"
+                                    Margin="0,0,12,0"
+                                    Content="Save event"
+                                    Click="SaveEvent_Click"
+                                    Style="{StaticResource TitanPrimaryButtonStyle}"/>
+                            <Button x:Name="RefreshEventsButton"
+                                    Margin="0,0,12,0"
+                                    Content="Refresh list"
+                                    Click="RefreshEvents_Click"
+                                    Style="{StaticResource SecondaryButtonStyle}"/>
+                            <Button x:Name="DeleteEventButton"
+                                    Content="Delete selected"
+                                    Click="DeleteEvent_Click"
+                                    Style="{StaticResource DangerButtonStyle}"/>
+                        </UniformGrid>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="EventsCard" Grid.Row="3" Margin="0,18,0,0" Style="{StaticResource GlassCard}">
+                    <StackPanel>
+                        <TextBlock Text="Calendar items"
+                                   Style="{StaticResource TitanSectionTitleTextStyle}"/>
+                        <TextBlock Margin="0,8,0,14"
+                                   Text="Imported rows merge into this list, and local edits stay here until you export them to Google or Apple. Click a row to load it into the editor above."
+                                   Style="{StaticResource TitanMutedBodyTextStyle}"/>
+                        <DataGrid x:Name="EventsGrid"
+                                  MinHeight="320"
+                                  SelectionChanged="EventsGrid_SelectionChanged">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Start" Binding="{Binding StartDisplay}" Width="1.35*"/>
+                                <DataGridTextColumn Header="End" Binding="{Binding EndDisplay}" Width="1.35*"/>
+                                <DataGridTextColumn Header="Title" Binding="{Binding Title}" Width="1.9*"/>
+                                <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="*"/>
+                                <DataGridTextColumn Header="Sync" Binding="{Binding SyncTargetsDisplay}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="FooterBand"
+                        Grid.Row="4"
+                        Margin="0,18,0,0"
+                        Padding="14,12"
+                        CornerRadius="18"
+                        Background="#880C1822"
+                        BorderBrush="#2B4A61"
+                        BorderThickness="1">
+                    <TextBlock x:Name="StatusText"
+                               Foreground="#93AAB8"
+                               TextWrapping="Wrap"/>
+                </Border>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</local:SnapWindow>

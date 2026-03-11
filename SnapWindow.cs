@@ -1,86 +1,130 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 
-namespace Label_CRM_demo
+namespace Label_CRM_demo;
+
+public class SnapWindow : Window
 {
-    public class SnapWindow : Window
+    private readonly ScaleTransform scale = new ScaleTransform(0.96, 0.96);
+    private readonly TranslateTransform translate = new TranslateTransform(0, 20);
+    private FrameworkElement? animatedSurface;
+    private bool playedOpen;
+    private bool closingAnimated;
+
+    public int OpenDurationMs { get; set; } = 300;
+    public int CloseDurationMs { get; set; } = 170;
+    public double StartScale { get; set; } = 0.9;
+    public double StartOffsetY { get; set; } = 28;
+
+    public SnapWindow()
     {
-        private readonly ScaleTransform _scale = new ScaleTransform(0.92, 0.92);
-        private bool _playedOpen;
-        private bool _closingAnimated;
-
-        public int OpenDurationMs { get; set; } = 180;
-        public int CloseDurationMs { get; set; } = 140;
-        public double StartScale { get; set; } = 0.92;
-
-        public SnapWindow()
+        ContentRendered += (_, _) =>
         {
-            RenderTransformOrigin = new Point(0.5, 0.5);
-            RenderTransform = _scale;
-
-            ContentRendered += (_, __) =>
+            if (playedOpen)
             {
-                if (_playedOpen) return;
-                _playedOpen = true;
-                PlaySnapOpen();
-            };
+                return;
+            }
 
-            Closing += SnapWindow_Closing;
-        }
+            playedOpen = true;
+            PlaySnapOpen();
+        };
 
-        private void PlaySnapOpen()
+        Closing += SnapWindow_Closing;
+    }
+
+    private void PlaySnapOpen()
+    {
+        var surface = EnsureAnimatedSurface();
+
+        BeginAnimation(OpacityProperty, null);
+        scale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        scale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+        translate.BeginAnimation(TranslateTransform.YProperty, null);
+
+        Opacity = 0;
+        scale.ScaleX = StartScale;
+        scale.ScaleY = StartScale;
+        translate.Y = StartOffsetY;
+
+        if (surface is not null)
         {
-            // kill old anims
-            BeginAnimation(OpacityProperty, null);
-            _scale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
-            _scale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
-
-            Opacity = 0;
-            _scale.ScaleX = StartScale;
-            _scale.ScaleY = StartScale;
-
-            var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
-
-            var fade = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(OpenDurationMs))
-            { EasingFunction = ease };
-
-            var scale = new DoubleAnimation(StartScale, 1, TimeSpan.FromMilliseconds(OpenDurationMs))
-            { EasingFunction = ease };
-
-            BeginAnimation(OpacityProperty, fade);
-            _scale.BeginAnimation(ScaleTransform.ScaleXProperty, scale);
-            _scale.BeginAnimation(ScaleTransform.ScaleYProperty, scale);
+            surface.Opacity = 1;
         }
 
-        private void SnapWindow_Closing(object? sender, CancelEventArgs e)
+        var ease = new BackEase { Amplitude = 0.35, EasingMode = EasingMode.EaseOut };
+        var duration = TimeSpan.FromMilliseconds(OpenDurationMs);
+
+        BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, duration) { EasingFunction = ease });
+        scale.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(StartScale, 1, duration) { EasingFunction = ease });
+        scale.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(StartScale, 1, duration) { EasingFunction = ease });
+        translate.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(StartOffsetY, 0, duration) { EasingFunction = ease });
+    }
+
+    private void SnapWindow_Closing(object? sender, CancelEventArgs e)
+    {
+        if (closingAnimated || !IsLoaded)
         {
-            if (_closingAnimated) return;
-            if (!IsLoaded) return;
-
-            _closingAnimated = true;
-            e.Cancel = true;
-
-            BeginAnimation(OpacityProperty, null);
-            _scale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
-            _scale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
-
-            var ease = new CubicEase { EasingMode = EasingMode.EaseIn };
-
-            var fade = new DoubleAnimation { To = 0, Duration = TimeSpan.FromMilliseconds(CloseDurationMs), EasingFunction = ease };
-            var scale = new DoubleAnimation { To = StartScale, Duration = TimeSpan.FromMilliseconds(CloseDurationMs), EasingFunction = ease };
-
-            fade.Completed += (_, __) =>
-            {
-                Closing -= SnapWindow_Closing;
-                Close();
-            };
-
-            BeginAnimation(OpacityProperty, fade);
-            _scale.BeginAnimation(ScaleTransform.ScaleXProperty, scale);
-            _scale.BeginAnimation(ScaleTransform.ScaleYProperty, scale);
+            return;
         }
+
+        var surface = EnsureAnimatedSurface();
+        if (surface is null)
+        {
+            return;
+        }
+
+        closingAnimated = true;
+        e.Cancel = true;
+
+        BeginAnimation(OpacityProperty, null);
+        scale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        scale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+        translate.BeginAnimation(TranslateTransform.YProperty, null);
+
+        var ease = new CubicEase { EasingMode = EasingMode.EaseIn };
+        var duration = TimeSpan.FromMilliseconds(CloseDurationMs);
+
+        var fade = new DoubleAnimation { To = 0, Duration = duration, EasingFunction = ease };
+        fade.Completed += (_, _) =>
+        {
+            Closing -= SnapWindow_Closing;
+            Close();
+        };
+
+        BeginAnimation(OpacityProperty, fade);
+        scale.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation { To = StartScale, Duration = duration, EasingFunction = ease });
+        scale.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation { To = StartScale, Duration = duration, EasingFunction = ease });
+        translate.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation { To = StartOffsetY, Duration = duration, EasingFunction = ease });
+    }
+
+    private FrameworkElement? EnsureAnimatedSurface()
+    {
+        if (animatedSurface is not null)
+        {
+            return animatedSurface;
+        }
+
+        animatedSurface = Content as FrameworkElement;
+        if (animatedSurface is null)
+        {
+            return null;
+        }
+
+        var transforms = new TransformGroup();
+        if (!animatedSurface.RenderTransform.Value.IsIdentity)
+        {
+            transforms.Children.Add(animatedSurface.RenderTransform);
+        }
+
+        transforms.Children.Add(scale);
+        transforms.Children.Add(translate);
+
+        animatedSurface.RenderTransformOrigin = new Point(0.5, 0.5);
+        animatedSurface.RenderTransform = transforms;
+
+        return animatedSurface;
     }
 }

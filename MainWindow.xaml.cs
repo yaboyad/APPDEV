@@ -19,6 +19,7 @@ public partial class MainWindow : SnapWindow
     private static readonly Brush ActiveTabForeground = CreateBrush("#07131F");
     private static readonly Brush InactiveTabForeground = CreateBrush("#CBD5E1");
     private readonly CredentialRepository credentials;
+    private readonly ReleaseNotesRepository releaseNotesRepository;
     private bool isSignUpMode;
 
     public MainWindow()
@@ -29,12 +30,14 @@ public partial class MainWindow : SnapWindow
     internal MainWindow(CredentialRepository credentials)
     {
         this.credentials = credentials;
+        releaseNotesRepository = new ReleaseNotesRepository();
         OpenDurationMs = 460;
         StartScale = 0.82;
         StartOffsetY = 48;
         InitializeComponent();
         InitializeInteractiveStates();
 
+        ReleaseNotesItemsControl.ItemsSource = releaseNotesRepository.Load();
         StoragePathText.Text = credentials.StoragePath;
         StatusText.Text = string.Empty;
         SignUpStatusText.Text = string.Empty;
@@ -273,4 +276,5 @@ public partial class MainWindow : SnapWindow
         Close();
     }
 }
+
 
