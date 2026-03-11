@@ -1,0 +1,254 @@
+﻿<local:SnapWindow x:Class="Label_CRM_demo.ModuleWindow"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:local="clr-namespace:Label_CRM_demo"
+                  Title="Workspace"
+                  Height="720"
+                  Width="1040"
+                  MinHeight="680"
+                  MinWidth="960"
+                  Background="#07131F"
+                  FontFamily="Segoe UI"
+                  Icon="Assets/Titan.ico">
+    <local:SnapWindow.Resources>
+        <LinearGradientBrush x:Key="ModuleBackground" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#07131F" Offset="0.0"/>
+            <GradientStop Color="#0B1A26" Offset="0.5"/>
+            <GradientStop Color="#163445" Offset="1.0"/>
+        </LinearGradientBrush>
+
+        <Style x:Key="ModuleCard" TargetType="Border">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#D9172531" Offset="0.0"/>
+                        <GradientStop Color="#C90E1821" Offset="1.0"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderBrush" Value="#294960"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="22"/>
+            <Setter Property="Padding" Value="22"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="28" ShadowDepth="0" Color="#77000000" Opacity="0.32"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="#00000000"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="GridLinesVisibility" Value="None"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="AlternationCount" Value="2"/>
+            <Setter Property="RowBackground" Value="#11000000"/>
+            <Setter Property="AlternatingRowBackground" Value="#16000000"/>
+            <Setter Property="Foreground" Value="#F3F9FC"/>
+        </Style>
+
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#172734"/>
+            <Setter Property="Foreground" Value="#9FB5C1"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="BorderBrush" Value="#294960"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+    </local:SnapWindow.Resources>
+
+    <Grid Background="{StaticResource ModuleBackground}">
+        <Canvas IsHitTestVisible="False">
+            <Ellipse Width="320" Height="320" Opacity="0.22">
+                <Ellipse.Fill>
+                    <RadialGradientBrush>
+                        <GradientStop Color="#4FD1C5" Offset="0.0"/>
+                        <GradientStop Color="#004FD1C5" Offset="1.0"/>
+                    </RadialGradientBrush>
+                </Ellipse.Fill>
+                <Ellipse.Effect>
+                    <BlurEffect Radius="100"/>
+                </Ellipse.Effect>
+                <Ellipse.RenderTransform>
+                    <TranslateTransform X="-60" Y="20"/>
+                </Ellipse.RenderTransform>
+                <Ellipse.Triggers>
+                    <EventTrigger RoutedEvent="Loaded">
+                        <BeginStoryboard>
+                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" From="-60" To="40" Duration="0:0:9"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="20" To="120" Duration="0:0:8"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                </Ellipse.Triggers>
+            </Ellipse>
+
+            <Ellipse Width="260" Height="260" Opacity="0.18">
+                <Ellipse.Fill>
+                    <RadialGradientBrush>
+                        <GradientStop Color="#F59E0B" Offset="0.0"/>
+                        <GradientStop Color="#00F59E0B" Offset="1.0"/>
+                    </RadialGradientBrush>
+                </Ellipse.Fill>
+                <Ellipse.Effect>
+                    <BlurEffect Radius="90"/>
+                </Ellipse.Effect>
+                <Ellipse.RenderTransform>
+                    <TranslateTransform X="820" Y="420"/>
+                </Ellipse.RenderTransform>
+                <Ellipse.Triggers>
+                    <EventTrigger RoutedEvent="Loaded">
+                        <BeginStoryboard>
+                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" From="820" To="760" Duration="0:0:10"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="420" To="330" Duration="0:0:7"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                </Ellipse.Triggers>
+            </Ellipse>
+        </Canvas>
+
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Border x:Name="HeaderCard" Style="{StaticResource ModuleCard}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="240"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                            <Border Width="28" Height="4" Margin="0,0,12,0" CornerRadius="2" Background="#70E1D1" VerticalAlignment="Center"/>
+                            <TextBlock Text="Focused workspace"
+                                       Style="{StaticResource TitanEyebrowTextStyle}"/>
+                        </StackPanel>
+
+                        <TextBlock x:Name="WindowTitleText"
+                                   Margin="0,18,0,0"
+                                   Foreground="#F6FBFD"
+                                   FontSize="34"
+                                   FontWeight="Bold"
+                                   TextWrapping="Wrap"/>
+                        <TextBlock x:Name="SubtitleText"
+                                   Margin="0,10,0,0"
+                                   Foreground="#B9CED8"
+                                   FontSize="15"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+
+                    <Border Grid.Column="1"
+                            x:Name="BehaviorCard"
+                            Margin="22,0,0,0"
+                            Padding="18"
+                            CornerRadius="18"
+                            Background="#101A23"
+                            BorderBrush="#315266"
+                            BorderThickness="1"
+                            VerticalAlignment="Stretch">
+                        <StackPanel VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="24" Height="4" Margin="0,0,10,0" CornerRadius="2" Background="#F0B862" VerticalAlignment="Center"/>
+                                <TextBlock Text="Window behavior"
+                                           Style="{StaticResource TitanEyebrowTextStyle}"/>
+                            </StackPanel>
+                            <TextBlock Margin="0,10,0,0"
+                                       Text="This workspace opens beside the dashboard and snaps back into focus when you open it again."
+                                       Foreground="#DDEBF1"
+                                       TextWrapping="Wrap"
+                                       LineHeight="22"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <Border x:Name="HighlightCard" Grid.Row="1" Margin="0,18,0,0" Style="{StaticResource ModuleCard}">
+                <TextBlock x:Name="HighlightText"
+                           Foreground="#E5F0F4"
+                           FontSize="16"
+                           TextWrapping="Wrap"
+                           LineHeight="24"/>
+            </Border>
+
+            <Grid Grid.Row="2" Margin="0,18,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <ItemsControl x:Name="MetricsList" x:FieldModifier="private" Margin="0,0,0,18">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="3"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Margin="0,0,14,14"
+                                    Padding="18"
+                                    CornerRadius="18"
+                                    Background="#CC101C26"
+                                    BorderBrush="#315266"
+                                    BorderThickness="1">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Label}" Style="{StaticResource TitanMetricLabelTextStyle}"/>
+                                    <TextBlock Margin="0,10,0,0"
+                                               Text="{Binding Value}"
+                                               Foreground="#F6FBFD"
+                                               FontSize="28"
+                                               FontWeight="Bold"/>
+                                    <TextBlock Margin="0,10,0,0"
+                                               Text="{Binding Detail}"
+                                               Style="{StaticResource TitanMutedBodyTextStyle}"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <Border x:Name="TableCard" Grid.Row="1" Style="{StaticResource ModuleCard}">
+                    <StackPanel>
+                        <TextBlock Text="Workspace activity"
+                                   Style="{StaticResource TitanSectionTitleTextStyle}"/>
+                        <TextBlock Margin="0,8,0,14"
+                                   Text="This view is ready to swap from demo rows to live local data whenever you are."
+                                   Style="{StaticResource TitanMutedBodyTextStyle}"/>
+                        <DataGrid x:Name="RecordsGrid">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn x:Name="Column1" Binding="{Binding Column1}" Width="*"/>
+                                <DataGridTextColumn x:Name="Column2" Binding="{Binding Column2}" Width="*"/>
+                                <DataGridTextColumn x:Name="Column3" Binding="{Binding Column3}" Width="*"/>
+                                <DataGridTextColumn x:Name="Column4" Binding="{Binding Column4}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <Border x:Name="FooterBand"
+                    Grid.Row="3"
+                    Margin="0,18,0,0"
+                    Padding="14,12"
+                    CornerRadius="18"
+                    Background="#880C1822"
+                    BorderBrush="#2B4A61"
+                    BorderThickness="1">
+                <TextBlock x:Name="FooterText"
+                           Foreground="#93AAB8"
+                           TextWrapping="Wrap"/>
+            </Border>
+        </Grid>
+    </Grid>
+</local:SnapWindow>

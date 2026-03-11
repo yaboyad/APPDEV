@@ -2,110 +2,175 @@
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Threading;
+using Label_CRM_demo.Models;
 
-namespace Label_CRM_demo
+namespace Label_CRM_demo;
+
+public partial class Window2 : Window
 {
-    public partial class Window2 : Window
+    private readonly DispatcherTimer clockTimer = new DispatcherTimer();
+    private readonly AuthenticatedUser currentUser;
+
+    public Window2()
+        : this(new AuthenticatedUser("Admin", "Admin"))
     {
-        private readonly DispatcherTimer _clockTimer = new DispatcherTimer();
+    }
 
-        // Tab indexes (match the order in XAML)
-        private const int TAB_OVERVIEW = 0;
-        private const int TAB_ACCOUNT = 1;
-        private const int TAB_PAYMENTS = 2;
-        private const int TAB_CONTRACTS = 3;
-        private const int TAB_CALENDAR = 4;
-        private const int TAB_SMS = 5;
-        private const int TAB_EMAIL = 6;
+    public Window2(AuthenticatedUser currentUser)
+    {
+        this.currentUser = currentUser;
+        InitializeComponent();
+        InitializeInteractiveStates();
 
-        public Window2()
+        clockTimer.Interval = TimeSpan.FromSeconds(1);
+        clockTimer.Tick += (_, _) => ClockText.Text = DateTime.Now.ToString("h:mm:ss tt");
+    }
+
+    private void Window_Loaded(object sender, RoutedEventArgs e)
+    {
+        clockTimer.Start();
+        ApplyUserState();
+        LoadDashboardData();
+        UiAnimator.PlayEntrance(new FrameworkElement[]
         {
-            InitializeComponent();
+            SidebarPanel,
+            HeroCard,
+            LaunchCard,
+            AccountCard,
+            PaymentMetricCard,
+            RevenueCard,
+            TasksCard,
+            PaymentsSection,
+            CalendarSection,
+            ActivitySection
+        }, 28, 70);
+    }
 
-            _clockTimer.Interval = TimeSpan.FromSeconds(1);
-            _clockTimer.Tick += (_, __) => ClockText.Text = DateTime.Now.ToString("h:mm:ss tt");
-        }
-
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+    private void InitializeInteractiveStates()
+    {
+        UiAnimator.AttachHoverLift(new FrameworkElement[]
         {
-            _clockTimer.Start();
-            LoadDemoData();
-        }
+            HeroCard,
+            LaunchCard,
+            AccountCard,
+            PaymentMetricCard,
+            RevenueCard,
+            TasksCard,
+            StoreCard
+        }, -7, 1.012);
 
-        private void LoadDemoData()
+        UiAnimator.AttachHoverLift(new FrameworkElement[]
         {
-            // Overview grids
-            PaymentsGrid.ItemsSource = new List<dynamic>
-            {
-                new { Date = "Feb 18", Amount = "$49.00", Method = "Card", Status = "Paid" },
-                new { Date = "Jan 18", Amount = "$49.00", Method = "Card", Status = "Paid" },
-                new { Date = "Dec 18", Amount = "$49.00", Method = "Card", Status = "Paid" },
-            };
+            OverviewButton,
+            AccountButton,
+            PaymentsButton,
+            ContractsButton,
+            CalendarButton,
+            SmsButton,
+            EmailButton,
+            OpenPaymentsButton,
+            OpenContractsButton,
+            OpenSmsButton,
+            LogoutButton
+        }, -4, 1.01);
+    }
 
-            CalendarGrid.ItemsSource = new List<dynamic>
-            {
-                new { Date = "Feb 22", Title = "Drop Prep Check-in", Type = "Task" },
-                new { Date = "Feb 24", Title = "Artist Outreach", Type = "Call" },
-                new { Date = "Mar 01", Title = "Payment Due", Type = "Billing" },
-            };
+    private void ApplyUserState()
+    {
+        UserNameText.Text = currentUser.DisplayName;
+        WelcomeText.Text = $"Welcome back, {currentUser.DisplayName}";
+        StorageText.Text = App.Credentials.StoragePath;
+        AccountStatusText.Text = "Protected";
+        NextPaymentText.Text = "$49.00";
+        NextPaymentDateText.Text = "Due March 18";
+        RevenueText.Text = "$3,480";
+        TasksText.Text = "3 active";
+    }
 
-            // Payments tab history
-            PaymentHistoryGrid.ItemsSource = new List<dynamic>
-            {
-                new { Invoice = "INV-1001", Date = "Feb 18", Amount = "$49.00", Status = "Paid" },
-                new { Invoice = "INV-1000", Date = "Jan 18", Amount = "$49.00", Status = "Paid" },
-                new { Invoice = "INV-0999", Date = "Dec 18", Amount = "$49.00", Status = "Paid" },
-            };
-
-            // Contracts tab
-            ContractsGrid.ItemsSource = new List<dynamic>
-            {
-                new { Client = "Demo Artist", Type = "Mgmt", Start = "Feb 01", Status = "Active" },
-                new { Client = "Demo Producer", Type = "Split", Start = "Jan 10", Status = "Active" },
-            };
-        }
-
-        private void SelectTab(int index)
+    private void LoadDashboardData()
+    {
+        PaymentsGrid.ItemsSource = new List<PaymentRow>
         {
-            if (MainTabs == null) return;
-            if (index < 0 || index >= MainTabs.Items.Count) return;
-            MainTabs.SelectedIndex = index;
-        }
+            new PaymentRow("Feb 18", "$49.00", "Card", "Paid"),
+            new PaymentRow("Jan 18", "$49.00", "Card", "Paid"),
+            new PaymentRow("Dec 18", "$49.00", "Card", "Paid")
+        };
 
-        // Nav clicks
-        private void Nav_Overview_Click(object sender, RoutedEventArgs e) => SelectTab(TAB_OVERVIEW);
-        private void Nav_Account_Click(object sender, RoutedEventArgs e) => SelectTab(TAB_ACCOUNT);
-        private void Nav_Payments_Click(object sender, RoutedEventArgs e) => SelectTab(TAB_PAYMENTS);
-        private void Nav_Contracts_Click(object sender, RoutedEventArgs e) => SelectTab(TAB_CONTRACTS);
-        private void Nav_Calendar_Click(object sender, RoutedEventArgs e) => SelectTab(TAB_CALENDAR);
-        private void Nav_SMSManager_Click(object sender, RoutedEventArgs e) => SelectTab(TAB_SMS);
-        private void Nav_EmailManager_Click(object sender, RoutedEventArgs e) => SelectTab(TAB_EMAIL);
-
-        // Quick actions (stubs for now)
-        private void AddPayment_Click(object sender, RoutedEventArgs e)
-            => MessageBox.Show("Add Payment (hook this to a form later).", "Titan");
-
-        private void CreateContract_Click(object sender, RoutedEventArgs e)
-            => MessageBox.Show("Create Contract (hook this to a contract builder later).", "Titan");
-
-        private void NewContact_Click(object sender, RoutedEventArgs e)
-            => MessageBox.Show("New Contact (hook this to CRM later).", "Titan");
-
-        private void Logout_Click(object sender, RoutedEventArgs e)
+        CalendarGrid.ItemsSource = new List<CalendarRow>
         {
-            _clockTimer.Stop();
+            new CalendarRow("Mar 12", "Drop Prep Check-in", "Task"),
+            new CalendarRow("Mar 14", "Artist Outreach", "Call"),
+            new CalendarRow("Mar 18", "Payment Due", "Billing")
+        };
 
-            // If you have MainWindow as login, show it:
-            var login = new MainWindow();
-            login.Show();
-
-            Close();
-        }
-
-        protected override void OnClosed(EventArgs e)
+        ActivityGrid.ItemsSource = new List<ActivityRow>
         {
-            _clockTimer.Stop();
-            base.OnClosed(e);
-        }
+            new ActivityRow("Payments", "Recurring invoice collected", currentUser.DisplayName, "Done"),
+            new ActivityRow("Contracts", "Single release draft updated", currentUser.DisplayName, "In Progress"),
+            new ActivityRow("Calendar", "Artist outreach call scheduled", currentUser.DisplayName, "Ready")
+        };
+    }
+
+    private void Nav_Overview_Click(object sender, RoutedEventArgs e)
+    {
+        DashboardScrollViewer.ScrollToTop();
+        Activate();
+    }
+
+    private void Nav_Account_Click(object sender, RoutedEventArgs e)
+        => OpenModule(ModuleWindowState.CreateAccount(currentUser));
+
+    private void Nav_Payments_Click(object sender, RoutedEventArgs e)
+        => OpenModule(ModuleWindowState.CreatePayments());
+
+    private void Nav_Contracts_Click(object sender, RoutedEventArgs e)
+        => OpenModule(ModuleWindowState.CreateContracts());
+
+    private void Nav_Calendar_Click(object sender, RoutedEventArgs e)
+        => OpenModule(ModuleWindowState.CreateCalendar());
+
+    private void Nav_SMSManager_Click(object sender, RoutedEventArgs e)
+        => OpenModule(ModuleWindowState.CreateSmsManager());
+
+    private void Nav_EmailManager_Click(object sender, RoutedEventArgs e)
+        => OpenModule(ModuleWindowState.CreateEmailManager());
+
+    private void AddPayment_Click(object sender, RoutedEventArgs e)
+        => OpenModule(ModuleWindowState.CreatePayments());
+
+    private void CreateContract_Click(object sender, RoutedEventArgs e)
+        => OpenModule(ModuleWindowState.CreateContracts());
+
+    private void NewContact_Click(object sender, RoutedEventArgs e)
+        => OpenModule(ModuleWindowState.CreateSmsManager());
+
+    private void Logout_Click(object sender, RoutedEventArgs e)
+    {
+        clockTimer.Stop();
+        WindowManager.CloseAll();
+
+        var loginWindow = new MainWindow(App.Credentials);
+        Application.Current.MainWindow = loginWindow;
+        loginWindow.Show();
+
+        Close();
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        clockTimer.Stop();
+        base.OnClosed(e);
+    }
+
+    private void OpenModule(ModuleWindowState state)
+    {
+        WindowManager.ShowOrFocus(
+            state.WindowKey,
+            () => new ModuleWindow(state),
+            this);
     }
 }
+
+public sealed record PaymentRow(string Date, string Amount, string Method, string Status);
+public sealed record CalendarRow(string Date, string Title, string Type);
+public sealed record ActivityRow(string Workspace, string Action, string Owner, string Status);
