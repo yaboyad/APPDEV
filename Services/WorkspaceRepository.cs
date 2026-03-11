@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using Label_CRM_demo.Models;
 
 namespace Label_CRM_demo.Services;
@@ -13,6 +15,10 @@ public sealed class WorkspaceRepository
     {
         WriteIndented = true
     };
+
+    private readonly SemaphoreSlim gate = new(1, 1);
+    private WorkspaceStoreDocument? cachedStore;
+    private bool isInitialized;
 
     public WorkspaceRepository(string? storagePath = null)
     {
@@ -26,7 +32,100 @@ public sealed class WorkspaceRepository
     public string StoragePath { get; }
 
     public void EnsureInitialized()
+        => EnsureInitializedAsync().GetAwaiter().GetResult();
+
+    public async Task EnsureInitializedAsync(CancellationToken cancellationToken = default)
     {
+        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await EnsureInitializedCoreAsync(cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    public WorkspaceSnapshot LoadForUser(string username)
+        => LoadForUserAsync(username).GetAwaiter().GetResult();
+
+    public async Task<WorkspaceSnapshot> LoadForUserAsync(
+        string username,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedUsername = NormalizeUserKey(username);
+
+        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var store = await LoadStoreCoreAsync(cancellationToken).ConfigureAwait(false);
+
+            var contacts = store.Contacts
+                .Where(contact => string.Equals(contact.OwnerUsername, normalizedUsername, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(contact => contact.FullName)
+                .ThenBy(contact => contact.Company)
+                .ToList();
+
+            var contracts = store.Contracts
+                .Where(contract => string.Equals(contract.OwnerUsername, normalizedUsername, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(contract => contract.ReminderDate ?? contract.StartDate)
+                .ThenBy(contract => contract.Title)
+                .ToList();
+
+            return new WorkspaceSnapshot(contacts, contracts);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    public void SaveForUser(
+        string username,
+        IEnumerable<ContactRecord> contacts,
+        IEnumerable<ContractRecord> contracts)
+        => SaveForUserAsync(username, contacts, contracts).GetAwaiter().GetResult();
+
+    public async Task SaveForUserAsync(
+        string username,
+        IEnumerable<ContactRecord> contacts,
+        IEnumerable<ContractRecord> contracts,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(contacts);
+        ArgumentNullException.ThrowIfNull(contracts);
+
+        var normalizedUsername = NormalizeUserKey(username);
+        var contactList = contacts.ToList();
+        var contractList = contracts.ToList();
+
+        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var store = await LoadStoreCoreAsync(cancellationToken).ConfigureAwait(false);
+
+            store.Contacts.RemoveAll(contact => string.Equals(contact.OwnerUsername, normalizedUsername, StringComparison.OrdinalIgnoreCase));
+            store.Contracts.RemoveAll(contract => string.Equals(contract.OwnerUsername, normalizedUsername, StringComparison.OrdinalIgnoreCase));
+
+            store.Contacts.AddRange(contactList.Select(contact => NormalizeContact(contact, normalizedUsername)));
+            store.Contracts.AddRange(contractList.Select(contract => NormalizeContract(contract, normalizedUsername)));
+
+            await SaveStoreCoreAsync(store, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    private async Task EnsureInitializedCoreAsync(CancellationToken cancellationToken)
+    {
+        if (isInitialized)
+        {
+            return;
+        }
+
         var directory = Path.GetDirectoryName(StoragePath)
             ?? throw new InvalidOperationException("Workspace store path is invalid.");
 
@@ -34,66 +133,40 @@ public sealed class WorkspaceRepository
 
         if (!File.Exists(StoragePath))
         {
-            SaveStore(new WorkspaceStoreDocument());
+            await SaveStoreCoreAsync(new WorkspaceStoreDocument(), cancellationToken).ConfigureAwait(false);
+            return;
         }
+
+        isInitialized = true;
     }
 
-    public WorkspaceSnapshot LoadForUser(string username)
+    private async Task<WorkspaceStoreDocument> LoadStoreCoreAsync(CancellationToken cancellationToken)
     {
-        var normalizedUsername = NormalizeUserKey(username);
-        var store = LoadStore();
+        await EnsureInitializedCoreAsync(cancellationToken).ConfigureAwait(false);
 
-        var contacts = store.Contacts
-            .Where(contact => string.Equals(contact.OwnerUsername, normalizedUsername, StringComparison.OrdinalIgnoreCase))
-            .OrderBy(contact => contact.FullName)
-            .ThenBy(contact => contact.Company)
-            .ToList();
-
-        var contracts = store.Contracts
-            .Where(contract => string.Equals(contract.OwnerUsername, normalizedUsername, StringComparison.OrdinalIgnoreCase))
-            .OrderBy(contract => contract.ReminderDate ?? contract.StartDate)
-            .ThenBy(contract => contract.Title)
-            .ToList();
-
-        return new WorkspaceSnapshot(contacts, contracts);
-    }
-
-    public void SaveForUser(
-        string username,
-        IEnumerable<ContactRecord> contacts,
-        IEnumerable<ContractRecord> contracts)
-    {
-        var normalizedUsername = NormalizeUserKey(username);
-        var store = LoadStore();
-
-        store.Contacts.RemoveAll(contact => string.Equals(contact.OwnerUsername, normalizedUsername, StringComparison.OrdinalIgnoreCase));
-        store.Contracts.RemoveAll(contract => string.Equals(contract.OwnerUsername, normalizedUsername, StringComparison.OrdinalIgnoreCase));
-
-        store.Contacts.AddRange(contacts.Select(contact => NormalizeContact(contact, normalizedUsername)));
-        store.Contracts.AddRange(contracts.Select(contract => NormalizeContract(contract, normalizedUsername)));
-
-        SaveStore(store);
-    }
-
-    private WorkspaceStoreDocument LoadStore()
-    {
-        EnsureInitialized();
+        if (cachedStore is not null)
+        {
+            return cachedStore;
+        }
 
         try
         {
-            var json = File.ReadAllText(StoragePath);
-            return JsonSerializer.Deserialize<WorkspaceStoreDocument>(json, SerializerOptions) ?? new WorkspaceStoreDocument();
+            cachedStore = await RepositoryFileStore.ReadJsonAsync<WorkspaceStoreDocument>(StoragePath, SerializerOptions, cancellationToken).ConfigureAwait(false)
+                ?? new WorkspaceStoreDocument();
+
+            isInitialized = true;
+            return cachedStore;
         }
         catch
         {
-            BackupCorruptStore();
-            SaveStore(new WorkspaceStoreDocument());
-            var resetJson = File.ReadAllText(StoragePath);
-            return JsonSerializer.Deserialize<WorkspaceStoreDocument>(resetJson, SerializerOptions) ?? new WorkspaceStoreDocument();
+            await BackupCorruptStoreCoreAsync(cancellationToken).ConfigureAwait(false);
+            var resetStore = new WorkspaceStoreDocument();
+            await SaveStoreCoreAsync(resetStore, cancellationToken).ConfigureAwait(false);
+            return cachedStore!;
         }
     }
 
-    private void SaveStore(WorkspaceStoreDocument store)
+    private async Task SaveStoreCoreAsync(WorkspaceStoreDocument store, CancellationToken cancellationToken)
     {
         var directory = Path.GetDirectoryName(StoragePath)
             ?? throw new InvalidOperationException("Workspace store path is invalid.");
@@ -113,11 +186,12 @@ public sealed class WorkspaceRepository
             .ThenBy(contract => contract.Title)
             .ToList();
 
-        var json = JsonSerializer.Serialize(store, SerializerOptions);
-        File.WriteAllText(StoragePath, json);
+        cachedStore = store;
+        await RepositoryFileStore.WriteJsonAtomicAsync(StoragePath, store, SerializerOptions, cancellationToken).ConfigureAwait(false);
+        isInitialized = true;
     }
 
-    private void BackupCorruptStore()
+    private async Task BackupCorruptStoreCoreAsync(CancellationToken cancellationToken)
     {
         if (!File.Exists(StoragePath))
         {
@@ -125,7 +199,7 @@ public sealed class WorkspaceRepository
         }
 
         var backupPath = StoragePath + ".broken-" + DateTime.Now.ToString("yyyyMMddHHmmss");
-        File.Copy(StoragePath, backupPath, overwrite: true);
+        await RepositoryFileStore.CopyAsync(StoragePath, backupPath, cancellationToken).ConfigureAwait(false);
     }
 
     private static ContactRecord NormalizeContact(ContactRecord contact, string ownerUsername) => new ContactRecord

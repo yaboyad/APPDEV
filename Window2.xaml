@@ -1,6 +1,7 @@
 ﻿<Window x:Class="Label_CRM_demo.Window2"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:Label_CRM_demo"
         Title="Titan Dashboard"
         MinHeight="760"
         MinWidth="1180"
@@ -15,91 +16,6 @@
             <GradientStop Color="#0D1A29" Offset="0.45"/>
             <GradientStop Color="#173746" Offset="1"/>
         </LinearGradientBrush>
-
-        <Style x:Key="CardStyle" TargetType="Border">
-            <Setter Property="Background" Value="#D9141F2A"/>
-            <Setter Property="BorderBrush" Value="#2F5165"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="22"/>
-            <Setter Property="Padding" Value="22"/>
-        </Style>
-
-        <Style x:Key="NavButtonStyle" TargetType="Button">
-            <Setter Property="Foreground" Value="#ECF7FB"/>
-            <Setter Property="Background" Value="#10202B"/>
-            <Setter Property="BorderBrush" Value="#315063"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="16,12"/>
-            <Setter Property="Margin" Value="0,0,0,10"/>
-            <Setter Property="HorizontalContentAlignment" Value="Left"/>
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
-
-        <Style x:Key="AccentNavButtonStyle" TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
-            <Setter Property="Foreground" Value="#07131F"/>
-            <Setter Property="Background" Value="#F0B862"/>
-            <Setter Property="BorderBrush" Value="#FFD166"/>
-        </Style>
-
-        <Style x:Key="ActionButtonStyle" TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="Margin" Value="0"/>
-        </Style>
-
-        <Style x:Key="AccentActionButtonStyle" TargetType="Button" BasedOn="{StaticResource ActionButtonStyle}">
-            <Setter Property="Foreground" Value="#07131F"/>
-            <Setter Property="Background" Value="#F0B862"/>
-            <Setter Property="BorderBrush" Value="#FFD166"/>
-        </Style>
-
-        <Style x:Key="InputBoxStyle" TargetType="TextBox">
-            <Setter Property="Background" Value="#0D1822"/>
-            <Setter Property="Foreground" Value="#F6FBFD"/>
-            <Setter Property="BorderBrush" Value="#355569"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="14,10"/>
-            <Setter Property="CaretBrush" Value="#F6FBFD"/>
-        </Style>
-
-
-        <Style x:Key="InputComboBoxStyle" TargetType="ComboBox">
-            <Setter Property="Background" Value="#0D1822"/>
-            <Setter Property="Foreground" Value="#F6FBFD"/>
-            <Setter Property="BorderBrush" Value="#355569"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="12,8"/>
-            <Setter Property="Height" Value="44"/>
-        </Style>
-
-        <Style x:Key="InputDatePickerStyle" TargetType="DatePicker">
-            <Setter Property="Background" Value="#0D1822"/>
-            <Setter Property="Foreground" Value="#F6FBFD"/>
-            <Setter Property="BorderBrush" Value="#355569"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Height" Value="44"/>
-        </Style>
-        <Style TargetType="DataGrid">
-            <Setter Property="Background" Value="#00000000"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="AutoGenerateColumns" Value="False"/>
-            <Setter Property="CanUserAddRows" Value="False"/>
-            <Setter Property="IsReadOnly" Value="True"/>
-            <Setter Property="GridLinesVisibility" Value="None"/>
-            <Setter Property="HeadersVisibility" Value="Column"/>
-            <Setter Property="RowBackground" Value="#12000000"/>
-            <Setter Property="AlternatingRowBackground" Value="#1B000000"/>
-            <Setter Property="AlternationCount" Value="2"/>
-            <Setter Property="Foreground" Value="#F3F9FC"/>
-        </Style>
-
-        <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#172734"/>
-            <Setter Property="Foreground" Value="#9FB5C1"/>
-            <Setter Property="BorderThickness" Value="0,0,0,1"/>
-            <Setter Property="BorderBrush" Value="#294960"/>
-            <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-        </Style>
     </Window.Resources>
 
     <Grid Background="{StaticResource ShellBackground}">
@@ -205,7 +121,7 @@
                             <StackPanel>
                                 <TextBlock Text="Recent payments" Foreground="#F6FBFD" FontSize="22" FontWeight="Bold"/>
                                 <TextBlock Margin="0,8,0,14" Text="Your latest charge history, ready at a glance." Foreground="#AFC4CF"/>
-                                <DataGrid x:Name="PaymentsGrid">
+                                <DataGrid x:Name="PaymentsGrid" Style="{StaticResource TitanDashboardDarkDataGridStyle}">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Date" Binding="{Binding Date}" Width="*"/>
                                         <DataGridTextColumn Header="Amount" Binding="{Binding Amount}" Width="*"/>
@@ -216,27 +132,189 @@
                             </StackPanel>
                         </Border>
                         <Border x:Name="CalendarSection" Grid.Column="1" Style="{StaticResource CardStyle}">
-                            <StackPanel>
-                                <TextBlock Text="Upcoming calendar" Foreground="#F6FBFD" FontSize="22" FontWeight="Bold"/>
-                                <TextBlock Margin="0,8,0,14" Text="Contact follow-ups and contract reminders land here automatically through the local calendar system." Foreground="#AFC4CF"/>
-                                <DataGrid x:Name="CalendarGrid">
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="When" Binding="{Binding StartDisplay}" Width="1.35*"/>
-                                        <DataGridTextColumn Header="Title" Binding="{Binding Title}" Width="1.45*"/>
-                                        <DataGridTextColumn Header="Type" Binding="{Binding Category}" Width="*"/>
-                                        <DataGridTextColumn Header="Sync" Binding="{Binding SyncTargetsDisplay}" Width="*"/>
-                                    </DataGrid.Columns>
-                                </DataGrid>
-                            </StackPanel>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Width="24" Height="4" Margin="0,0,10,0" CornerRadius="2" Background="#70E1D1" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Calendar overview" Style="{StaticResource TitanEyebrowTextStyle}"/>
+                                        </StackPanel>
+                                        <TextBlock Margin="0,14,0,0"
+                                                   Text="Upcoming calendar"
+                                                   Foreground="#F6FBFD"
+                                                   FontSize="24"
+                                                   FontWeight="Bold"/>
+                                        <TextBlock Margin="0,8,0,0"
+                                                   Text="Contact follow-ups, contract reminders, and synced appointments now read like a real agenda instead of a plain table."
+                                                   Foreground="#AFC4CF"
+                                                   TextWrapping="Wrap"/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                                        <Border Padding="14,8"
+                                                CornerRadius="12"
+                                                Background="#10202B"
+                                                BorderBrush="#315063"
+                                                BorderThickness="1">
+                                            <TextBlock Text="{Binding ElementName=CalendarGrid, Path=Items.Count, StringFormat={}{0} upcoming}"
+                                                       Foreground="#EAF4F8"
+                                                       FontSize="12"
+                                                       FontWeight="SemiBold"/>
+                                        </Border>
+                                        <Button Margin="0,12,0,0"
+                                                Padding="18,10"
+                                                Content="Open sync center"
+                                                Click="Nav_Calendar_Click"
+                                                Style="{StaticResource TitanPrimaryButtonStyle}"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <Border Grid.Row="1"
+                                        MinHeight="320"
+                                        Margin="0,20,0,0"
+                                        Padding="14"
+                                        CornerRadius="20"
+                                        Background="#F8FBFD"
+                                        BorderBrush="#D7E2EA"
+                                        BorderThickness="1">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                                  HorizontalScrollBarVisibility="Disabled"
+                                                  local:WheelScrollAssist.IsEnabled="True">
+                                        <ItemsControl x:Name="CalendarGrid">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <StackPanel/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Margin="0,0,0,12"
+                                                            Padding="18"
+                                                            Background="#FFFFFF"
+                                                            BorderBrush="#D9E5EC"
+                                                            BorderThickness="1"
+                                                            CornerRadius="18">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="86"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+
+                                                            <Border Width="72"
+                                                                    Padding="8,10"
+                                                                    CornerRadius="16"
+                                                                    Background="#0E2530">
+                                                                <StackPanel HorizontalAlignment="Center">
+                                                                    <TextBlock Text="{Binding Start, StringFormat={}{0:MMM}}"
+                                                                               Foreground="#87E2D7"
+                                                                               FontSize="12"
+                                                                               FontWeight="SemiBold"
+                                                                               HorizontalAlignment="Center"/>
+                                                                    <TextBlock Margin="0,4,0,0"
+                                                                               Text="{Binding Start, StringFormat={}{0:dd}}"
+                                                                               Foreground="#F6FBFD"
+                                                                               FontSize="28"
+                                                                               FontWeight="Bold"
+                                                                               HorizontalAlignment="Center"/>
+                                                                    <TextBlock Margin="0,2,0,0"
+                                                                               Text="{Binding Start, StringFormat={}{0:ddd}}"
+                                                                               Foreground="#BBD3DB"
+                                                                               FontSize="12"
+                                                                               HorizontalAlignment="Center"/>
+                                                                </StackPanel>
+                                                            </Border>
+
+                                                            <StackPanel Grid.Column="1"
+                                                                        Margin="16,0,18,0"
+                                                                        VerticalAlignment="Center">
+                                                                <TextBlock Text="{Binding Title}"
+                                                                           Foreground="#0F1720"
+                                                                           FontSize="17"
+                                                                           FontWeight="Bold"
+                                                                           TextTrimming="CharacterEllipsis"/>
+                                                                <TextBlock Margin="0,6,0,0"
+                                                                           Foreground="#4F6673">
+                                                                    <Run Text="{Binding Start, StringFormat={}{0:dddd, MMM d}}"/>
+                                                                    <Run Text=" at "/>
+                                                                    <Run Text="{Binding Start, StringFormat={}{0:h:mm tt}}"/>
+                                                                </TextBlock>
+                                                                <TextBlock Margin="0,4,0,0"
+                                                                           Text="{Binding Source, StringFormat=Source: {0}}"
+                                                                           Foreground="#7A8F9C"
+                                                                           TextTrimming="CharacterEllipsis"/>
+                                                            </StackPanel>
+
+                                                            <StackPanel Grid.Column="2"
+                                                                        VerticalAlignment="Center">
+                                                                <Border Padding="12,6"
+                                                                        CornerRadius="12"
+                                                                        Background="#E9F7F4"
+                                                                        BorderBrush="#CBEAE3"
+                                                                        BorderThickness="1">
+                                                                    <TextBlock Text="{Binding Category}"
+                                                                               Foreground="#0D6156"
+                                                                               FontSize="12"
+                                                                               FontWeight="SemiBold"/>
+                                                                </Border>
+                                                                <Border Margin="0,10,0,0"
+                                                                        Padding="12,6"
+                                                                        CornerRadius="12"
+                                                                        Background="#F2F5F8"
+                                                                        BorderBrush="#DCE4EA"
+                                                                        BorderThickness="1">
+                                                                    <TextBlock Text="{Binding SyncTargetsDisplay}"
+                                                                               Foreground="#5D7280"
+                                                                               FontSize="12"
+                                                                               FontWeight="SemiBold"/>
+                                                                </Border>
+                                                                <Border Margin="0,10,0,0"
+                                                                        Padding="12,8"
+                                                                        CornerRadius="14"
+                                                                        Background="#F8FBFD"
+                                                                        BorderBrush="#E3EAF0"
+                                                                        BorderThickness="1">
+                                                                    <StackPanel>
+                                                                        <TextBlock Text="Ends"
+                                                                                   Foreground="#7D93A0"
+                                                                                   FontSize="11"
+                                                                                   FontWeight="SemiBold"
+                                                                                   HorizontalAlignment="Center"/>
+                                                                        <TextBlock Margin="0,2,0,0"
+                                                                                   Text="{Binding End, StringFormat={}{0:h:mm tt}}"
+                                                                                   Foreground="#0F1720"
+                                                                                   FontWeight="Bold"
+                                                                                   HorizontalAlignment="Center"/>
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </Border>
+                            </Grid>
                         </Border>
                     </Grid>
 
                     <Grid Margin="0,18,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Border x:Name="ContactsSection" Margin="0,0,14,0" Style="{StaticResource CardStyle}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Border x:Name="ContactsSection" Margin="0,0,0,18" Style="{StaticResource CardStyle}">
                             <StackPanel>
                                 <TextBlock Text="Contacts" Foreground="#F6FBFD" FontSize="22" FontWeight="Bold"/>
                                 <TextBlock Margin="0,8,0,10" Foreground="#AFC4CF" TextWrapping="Wrap"
@@ -249,19 +327,23 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Margin="0,0,10,0">
                                         <TextBlock Text="Full name" Foreground="#9FB7C3" FontWeight="SemiBold"/>
-                                        <TextBox x:Name="ContactNameBox" Style="{StaticResource InputBoxStyle}" Margin="0,8,0,0"/>
+                                        <TextBox x:Name="ContactNameBox" Style="{StaticResource CrmReadableInputBoxStyle}" Margin="0,8,0,0"/>
                                         <TextBlock Margin="0,16,0,0" Text="Company" Foreground="#9FB7C3" FontWeight="SemiBold"/>
-                                        <TextBox x:Name="ContactCompanyBox" Style="{StaticResource InputBoxStyle}" Margin="0,8,0,0"/>
+                                        <TextBox x:Name="ContactCompanyBox" Style="{StaticResource CrmReadableInputBoxStyle}" Margin="0,8,0,0"/>
                                         <TextBlock Margin="0,16,0,0" Text="Phone number" Foreground="#9FB7C3" FontWeight="SemiBold"/>
-                                        <TextBox x:Name="ContactPhoneBox" Style="{StaticResource InputBoxStyle}" Margin="0,8,0,0"/>
+                                        <TextBox x:Name="ContactPhoneBox" Style="{StaticResource CrmReadableInputBoxStyle}" Margin="0,8,0,0"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Margin="10,0,0,0">
                                         <TextBlock Text="Email" Foreground="#9FB7C3" FontWeight="SemiBold"/>
-                                        <TextBox x:Name="ContactEmailBox" Style="{StaticResource InputBoxStyle}" Margin="0,8,0,0"/>
+                                        <TextBox x:Name="ContactEmailBox" Style="{StaticResource CrmReadableInputBoxStyle}" Margin="0,8,0,0"/>
                                         <TextBlock Margin="0,16,0,0" Text="Next follow-up" Foreground="#9FB7C3" FontWeight="SemiBold"/>
-                                        <DatePicker x:Name="ContactFollowUpPicker" Style="{StaticResource InputDatePickerStyle}" Margin="0,8,0,0"/>
+                                        <DatePicker x:Name="ContactFollowUpPicker" Style="{StaticResource CrmReadableDatePickerStyle}" Margin="0,8,0,0">
+                                            <DatePicker.Resources>
+                                                <Style TargetType="DatePickerTextBox" BasedOn="{StaticResource CrmReadableDatePickerTextBoxStyle}"/>
+                                            </DatePicker.Resources>
+                                        </DatePicker>
                                         <TextBlock Margin="0,16,0,0" Text="Notes" Foreground="#9FB7C3" FontWeight="SemiBold"/>
-                                        <TextBox x:Name="ContactNotesBox" Height="92" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" Style="{StaticResource InputBoxStyle}" Margin="0,8,0,0"/>
+                                        <TextBox x:Name="ContactNotesBox" Height="92" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" Style="{StaticResource CrmReadableInputBoxStyle}" Margin="0,8,0,0"/>
                                     </StackPanel>
                                 </Grid>
                                 <StackPanel Margin="0,16,0,0" Orientation="Horizontal">
@@ -269,7 +351,12 @@
                                     <Button x:Name="ResetContactButton" Width="116" Margin="10,0,0,0" Content="Clear" Click="ResetContact_Click" Style="{StaticResource ActionButtonStyle}"/>
                                 </StackPanel>
                                 <TextBlock Margin="0,18,0,14" Text="Select an existing contact below to edit it." Foreground="#AFC4CF"/>
-                                <DataGrid x:Name="ContactsGrid" MinHeight="190" SelectionChanged="ContactsGrid_SelectionChanged">
+                                <DataGrid x:Name="ContactsGrid"
+                                          Height="240"
+                                          SelectionChanged="ContactsGrid_SelectionChanged"
+                                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                          Style="{StaticResource CrmReadableDataGridStyle}">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Name" Binding="{Binding FullName}" Width="1.2*"/>
                                         <DataGridTextColumn Header="Company" Binding="{Binding Company}" Width="*"/>
@@ -280,7 +367,7 @@
                                 </DataGrid>
                             </StackPanel>
                         </Border>
-                        <Border x:Name="ContractsManagerSection" Grid.Column="1" Style="{StaticResource CardStyle}">
+                        <Border x:Name="ContractsManagerSection" Grid.Row="1" Style="{StaticResource CardStyle}">
                             <StackPanel>
                                 <TextBlock Text="Contracts" Foreground="#F6FBFD" FontSize="22" FontWeight="Bold"/>
                                 <TextBlock Margin="0,8,0,10" Foreground="#AFC4CF" TextWrapping="Wrap"
@@ -293,11 +380,11 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Margin="0,0,10,0">
                                         <TextBlock Text="Contract title" Foreground="#9FB7C3" FontWeight="SemiBold"/>
-                                        <TextBox x:Name="ContractTitleBox" Style="{StaticResource InputBoxStyle}" Margin="0,8,0,0"/>
+                                        <TextBox x:Name="ContractTitleBox" Style="{StaticResource CrmReadableInputBoxStyle}" Margin="0,8,0,0"/>
                                         <TextBlock Margin="0,16,0,0" Text="Client" Foreground="#9FB7C3" FontWeight="SemiBold"/>
-                                        <TextBox x:Name="ContractClientBox" Style="{StaticResource InputBoxStyle}" Margin="0,8,0,0"/>
+                                        <TextBox x:Name="ContractClientBox" Style="{StaticResource CrmReadableInputBoxStyle}" Margin="0,8,0,0"/>
                                         <TextBlock Margin="0,16,0,0" Text="Contract type" Foreground="#9FB7C3" FontWeight="SemiBold"/>
-                                        <ComboBox x:Name="ContractTypeBox" Style="{StaticResource InputComboBoxStyle}" Margin="0,8,0,0" SelectedIndex="0">
+                                        <ComboBox x:Name="ContractTypeBox" Style="{StaticResource CrmReadableComboBoxStyle}" Margin="0,8,0,0" SelectedIndex="0">
                                             <ComboBoxItem Content="Management"/>
                                             <ComboBoxItem Content="Distribution"/>
                                             <ComboBoxItem Content="Release"/>
@@ -308,7 +395,7 @@
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Margin="10,0,0,0">
                                         <TextBlock Text="Status" Foreground="#9FB7C3" FontWeight="SemiBold"/>
-                                        <ComboBox x:Name="ContractStateBox" Style="{StaticResource InputComboBoxStyle}" Margin="0,8,0,0" SelectedIndex="0">
+                                        <ComboBox x:Name="ContractStateBox" Style="{StaticResource CrmReadableComboBoxStyle}" Margin="0,8,0,0" SelectedIndex="0">
                                             <ComboBoxItem Content="Draft"/>
                                             <ComboBoxItem Content="Pending"/>
                                             <ComboBoxItem Content="Active"/>
@@ -316,11 +403,19 @@
                                             <ComboBoxItem Content="Closed"/>
                                         </ComboBox>
                                         <TextBlock Margin="0,16,0,0" Text="Start date" Foreground="#9FB7C3" FontWeight="SemiBold"/>
-                                        <DatePicker x:Name="ContractStartPicker" Style="{StaticResource InputDatePickerStyle}" Margin="0,8,0,0"/>
+                                        <DatePicker x:Name="ContractStartPicker" Style="{StaticResource CrmReadableDatePickerStyle}" Margin="0,8,0,0">
+                                            <DatePicker.Resources>
+                                                <Style TargetType="DatePickerTextBox" BasedOn="{StaticResource CrmReadableDatePickerTextBoxStyle}"/>
+                                            </DatePicker.Resources>
+                                        </DatePicker>
                                         <TextBlock Margin="0,16,0,0" Text="Reminder date" Foreground="#9FB7C3" FontWeight="SemiBold"/>
-                                        <DatePicker x:Name="ContractReminderPicker" Style="{StaticResource InputDatePickerStyle}" Margin="0,8,0,0"/>
+                                        <DatePicker x:Name="ContractReminderPicker" Style="{StaticResource CrmReadableDatePickerStyle}" Margin="0,8,0,0">
+                                            <DatePicker.Resources>
+                                                <Style TargetType="DatePickerTextBox" BasedOn="{StaticResource CrmReadableDatePickerTextBoxStyle}"/>
+                                            </DatePicker.Resources>
+                                        </DatePicker>
                                         <TextBlock Margin="0,16,0,0" Text="Notes" Foreground="#9FB7C3" FontWeight="SemiBold"/>
-                                        <TextBox x:Name="ContractNotesBox" Height="92" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" Style="{StaticResource InputBoxStyle}" Margin="0,8,0,0"/>
+                                        <TextBox x:Name="ContractNotesBox" Height="92" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" Style="{StaticResource CrmReadableInputBoxStyle}" Margin="0,8,0,0"/>
                                     </StackPanel>
                                 </Grid>
                                 <StackPanel Margin="0,16,0,0" Orientation="Horizontal">
@@ -328,7 +423,12 @@
                                     <Button x:Name="ResetContractButton" Width="116" Margin="10,0,0,0" Content="Clear" Click="ResetContract_Click" Style="{StaticResource ActionButtonStyle}"/>
                                 </StackPanel>
                                 <TextBlock Margin="0,18,0,14" Text="Select an existing contract below to edit it." Foreground="#AFC4CF"/>
-                                <DataGrid x:Name="ContractsGrid" MinHeight="190" SelectionChanged="ContractsGrid_SelectionChanged">
+                                <DataGrid x:Name="ContractsGrid"
+                                          Height="240"
+                                          SelectionChanged="ContractsGrid_SelectionChanged"
+                                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                          Style="{StaticResource CrmReadableDataGridStyle}">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Title" Binding="{Binding Title}" Width="1.25*"/>
                                         <DataGridTextColumn Header="Client" Binding="{Binding ClientName}" Width="*"/>
@@ -341,7 +441,7 @@
                             </StackPanel>
                         </Border>
                     </Grid>
-                    <Grid Margin="0,18,0,0">
+                                        <Grid Margin="0,18,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1.2*"/>
                             <ColumnDefinition Width="0.8*"/>
@@ -351,79 +451,102 @@
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
                                 <StackPanel>
                                     <TextBlock Text="Support center" Foreground="#F6FBFD" FontSize="22" FontWeight="Bold"/>
-                                    <TextBlock Margin="0,8,0,0" Foreground="#AFC4CF" TextWrapping="Wrap"
-                                               Text="Use this message thread for instant local help on billing, access, contracts, scheduling, and launch issues."/>
+                                    <TextBlock x:Name="SupportIntroText" Margin="0,8,0,0" Foreground="#AFC4CF" TextWrapping="Wrap"
+                                               Text="Send support requests or review the full inbox depending on your account tier."/>
                                 </StackPanel>
-                                <ScrollViewer x:Name="SupportTranscriptScrollViewer" Grid.Row="1" Height="340" Margin="0,18,0,0" VerticalScrollBarVisibility="Auto">
-                                    <ItemsControl x:Name="SupportMessagesItemsControl">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Border Margin="0,0,0,14" Padding="16,14" MaxWidth="520" CornerRadius="18" BorderThickness="1">
-                                                    <Border.Style>
-                                                        <Style TargetType="Border">
-                                                            <Setter Property="Background" Value="#111E29"/>
-                                                            <Setter Property="BorderBrush" Value="#315266"/>
-                                                            <Setter Property="HorizontalAlignment" Value="Left"/>
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding IsFromUser}" Value="True"><Setter Property="Background" Value="#F0B862"/><Setter Property="BorderBrush" Value="#FFD166"/><Setter Property="HorizontalAlignment" Value="Right"/></DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </Border.Style>
-                                                    <StackPanel>
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <TextBlock Text="{Binding SenderName}" FontWeight="SemiBold"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="#F6FBFD"/><Style.Triggers><DataTrigger Binding="{Binding IsFromUser}" Value="True"><Setter Property="Foreground" Value="#07131F"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
-                                                            <Border Margin="10,0,0,0" Padding="10,3" CornerRadius="999"><Border.Style><Style TargetType="Border"><Setter Property="Background" Value="#173243"/><Style.Triggers><DataTrigger Binding="{Binding IsFromUser}" Value="True"><Setter Property="Background" Value="#F7D38C"/></DataTrigger><DataTrigger Binding="{Binding IsUrgent}" Value="True"><Setter Property="Background" Value="#7F1D1D"/></DataTrigger></Style.Triggers></Style></Border.Style><TextBlock Text="{Binding Channel}" FontSize="11" FontWeight="SemiBold"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="#8CCFC7"/><Style.Triggers><DataTrigger Binding="{Binding IsFromUser}" Value="True"><Setter Property="Foreground" Value="#6B3B00"/></DataTrigger><DataTrigger Binding="{Binding IsUrgent}" Value="True"><Setter Property="Foreground" Value="#FDE68A"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></Border>
-                                                        </StackPanel>
-                                                        <TextBlock Margin="0,10,0,0" Text="{Binding Body}" TextWrapping="Wrap" LineHeight="22"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="#D8E7ED"/><Style.Triggers><DataTrigger Binding="{Binding IsFromUser}" Value="True"><Setter Property="Foreground" Value="#07131F"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
-                                                        <TextBlock Margin="0,10,0,0" FontSize="11" Opacity="0.82" Text="{Binding CreatedAt, StringFormat={}{0:MMM dd, h:mm tt}}"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="#9AB4C0"/><Style.Triggers><DataTrigger Binding="{Binding IsFromUser}" Value="True"><Setter Property="Foreground" Value="#6B4B16"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
-                                                    </StackPanel>
-                                                </Border>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </ScrollViewer>
-                                <Border x:Name="SupportComposerCard" Grid.Row="2" Margin="0,18,0,0" Padding="18" CornerRadius="18" Background="#101A23" BorderBrush="#315063" BorderThickness="1">
-                                    <StackPanel>
-                                        <TextBlock Text="Send a message" Foreground="#F0B862" FontWeight="SemiBold"/>
-                                        <TextBox x:Name="SupportComposerTextBox" Margin="0,14,0,0" Height="120" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" Style="{StaticResource InputBoxStyle}"/>
-                                        <StackPanel Margin="0,14,0,0" Orientation="Horizontal">
-                                            <Button x:Name="SendSupportButton" Width="150" Content="Send message" Click="SendSupportMessage_Click" Style="{StaticResource AccentActionButtonStyle}"/>
-                                            <Button x:Name="ClearSupportButton" Width="110" Margin="12,0,0,0" Content="Clear" Click="ClearSupportMessage_Click" Style="{StaticResource ActionButtonStyle}"/>
+
+                                <StackPanel x:Name="UserSupportFormPanel" Grid.Row="1" Margin="0,18,0,0">
+                                    <Border Padding="16" CornerRadius="18" Background="#101A23" BorderBrush="#315063" BorderThickness="1">
+                                        <StackPanel>
+                                            <TextBlock Text="User submission access" Foreground="#F0B862" FontWeight="SemiBold"/>
+                                            <TextBlock Margin="0,10,0,0" Foreground="#D8E7ED" TextWrapping="Wrap"
+                                                       Text="User accounts can only submit support requests. Saved submissions are reviewed from the master account inbox."/>
                                         </StackPanel>
-                                        <TextBlock x:Name="SupportStatusText" Margin="0,14,0,0" Foreground="#A9C0CA" TextWrapping="Wrap"/>
-                                    </StackPanel>
-                                </Border>
+                                    </Border>
+                                    <Border x:Name="SupportComposerCard" Margin="0,14,0,0" Padding="18" CornerRadius="18" Background="#101A23" BorderBrush="#315063" BorderThickness="1">
+                                        <StackPanel>
+                                            <TextBlock Text="Send a message" Foreground="#F0B862" FontWeight="SemiBold"/>
+                                            <TextBox x:Name="SupportComposerTextBox" Margin="0,14,0,0" Height="120" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" Style="{StaticResource InputBoxStyle}"/>
+                                            <StackPanel Margin="0,14,0,0" Orientation="Horizontal">
+                                                <Button x:Name="SendSupportButton" Width="150" Content="Send message" Click="SendSupportMessage_Click" Style="{StaticResource AccentActionButtonStyle}"/>
+                                                <Button x:Name="ClearSupportButton" Width="110" Margin="12,0,0,0" Content="Clear" Click="ClearSupportMessage_Click" Style="{StaticResource ActionButtonStyle}"/>
+                                            </StackPanel>
+                                            <TextBlock x:Name="SupportStatusText" Margin="0,14,0,0" Foreground="#A9C0CA" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <StackPanel x:Name="MasterSupportInboxPanel" Grid.Row="1" Margin="0,18,0,0" Visibility="Collapsed">
+                                    <Border Padding="16" CornerRadius="18" Background="#101A23" BorderBrush="#315063" BorderThickness="1">
+                                        <StackPanel>
+                                            <TextBlock Text="Master inbox" Foreground="#F0B862" FontWeight="SemiBold"/>
+                                            <TextBlock Margin="0,10,0,0" Foreground="#D8E7ED" TextWrapping="Wrap"
+                                                       Text="Every support submission from every account is saved here for master review."/>
+                                        </StackPanel>
+                                    </Border>
+                                    <DataGrid x:Name="SupportSubmissionsGrid" Margin="0,14,0,0" Height="250" SelectionChanged="SupportSubmissionsGrid_SelectionChanged" Style="{StaticResource TitanDashboardDarkDataGridStyle}">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Account" Binding="{Binding SubmittedByLabel}" Width="2*"/>
+                                            <DataGridTextColumn Header="Tier" Binding="{Binding TierLabel}" Width="*"/>
+                                            <DataGridTextColumn Header="Lane" Binding="{Binding Channel}" Width="*"/>
+                                            <DataGridTextColumn Header="Priority" Binding="{Binding PriorityLabel}" Width="*"/>
+                                            <DataGridTextColumn Header="Received" Binding="{Binding CreatedAt, StringFormat={}{0:MMM dd, h:mm tt}}" Width="1.2*"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                    <Border Margin="0,14,0,0" Padding="18" CornerRadius="18" Background="#101A23" BorderBrush="#315063" BorderThickness="1">
+                                        <StackPanel>
+                                            <TextBlock Text="Selected request" Foreground="#F0B862" FontWeight="SemiBold"/>
+                                            <TextBlock x:Name="SelectedSupportSubmissionMetaText" Margin="0,10,0,0" Foreground="#F6FBFD" FontSize="16" FontWeight="Bold" TextWrapping="Wrap"/>
+                                            <TextBlock x:Name="SelectedSupportSubmissionBodyText" Margin="0,12,0,0" Foreground="#D8E7ED" TextWrapping="Wrap" LineHeight="22"/>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
                             </Grid>
                         </Border>
                         <Border x:Name="SupportSummaryCard" Grid.Column="1" Style="{StaticResource CardStyle}">
-                            <StackPanel>
-                                <TextBlock Text="24/7 support status" Foreground="#F6FBFD" FontSize="22" FontWeight="Bold"/>
-                                <TextBlock Margin="0,8,0,16" Foreground="#AFC4CF" TextWrapping="Wrap"
-                                           Text="Always-on automated help today, with room to connect a live support service later."/>
-                                <UniformGrid Columns="2">
-                                    <Border Margin="0,0,10,10" Padding="14" CornerRadius="16" Background="#101A23" BorderBrush="#315063" BorderThickness="1"><StackPanel><TextBlock Text="Coverage" Foreground="#9FB7C3" FontWeight="SemiBold"/><TextBlock x:Name="SupportCoverageText" Margin="0,10,0,0" Foreground="#F6FBFD" FontSize="18" FontWeight="Bold" TextWrapping="Wrap"/></StackPanel></Border>
-                                    <Border Margin="0,0,0,10" Padding="14" CornerRadius="16" Background="#101A23" BorderBrush="#315063" BorderThickness="1"><StackPanel><TextBlock Text="Thread state" Foreground="#9FB7C3" FontWeight="SemiBold"/><TextBlock x:Name="SupportThreadStateText" Margin="0,10,0,0" Foreground="#F6FBFD" FontSize="18" FontWeight="Bold" TextWrapping="Wrap"/></StackPanel></Border>
-                                    <Border Margin="0,0,10,0" Padding="14" CornerRadius="16" Background="#101A23" BorderBrush="#315063" BorderThickness="1"><StackPanel><TextBlock Text="Last reply" Foreground="#9FB7C3" FontWeight="SemiBold"/><TextBlock x:Name="SupportLastReplyText" Margin="0,10,0,0" Foreground="#F6FBFD" FontSize="18" FontWeight="Bold" TextWrapping="Wrap"/></StackPanel></Border>
-                                    <Border Padding="14" CornerRadius="16" Background="#101A23" BorderBrush="#315063" BorderThickness="1"><StackPanel><TextBlock Text="Routing lane" Foreground="#9FB7C3" FontWeight="SemiBold"/><TextBlock x:Name="SupportRoutingText" Margin="0,10,0,0" Foreground="#F6FBFD" FontSize="18" FontWeight="Bold" TextWrapping="Wrap"/></StackPanel></Border>
-                                </UniformGrid>
-                                <Border Margin="0,18,0,0" Padding="16" CornerRadius="18" Background="#101A23" BorderBrush="#315063" BorderThickness="1">
-                                    <StackPanel>
-                                        <TextBlock Text="Saved transcript" Foreground="#F0B862" FontWeight="SemiBold"/>
-                                        <TextBlock x:Name="SupportMessageCountText" Margin="0,10,0,0" Foreground="#F6FBFD" FontSize="18" FontWeight="Bold"/>
-                                        <TextBlock x:Name="SupportStoragePathText" Margin="0,10,0,0" Foreground="#9FB7C3" FontSize="12" TextWrapping="Wrap"/>
-                                    </StackPanel>
-                                </Border>
-                                <TextBlock Margin="0,18,0,12" Text="Quick prompts" Foreground="#F6FBFD" FontSize="20" FontWeight="Bold"/>
-                                <Button x:Name="BillingPromptButton" Margin="0,0,0,10" Content="Need billing help" Tag="I need help with billing, invoices, or a recent payment." Click="SupportQuickPrompt_Click" Style="{StaticResource ActionButtonStyle}"/>
-                                <Button x:Name="AccessPromptButton" Margin="0,0,0,10" Content="Access issue" Tag="I cannot sign in or access the right account on this device." Click="SupportQuickPrompt_Click" Style="{StaticResource ActionButtonStyle}"/>
-                                <Button x:Name="CalendarPromptButton" Margin="0,0,0,10" Content="Calendar conflict" Tag="I need help with a scheduled task, reminder, or calendar conflict." Click="SupportQuickPrompt_Click" Style="{StaticResource ActionButtonStyle}"/>
-                                <Button x:Name="ContractsPromptButton" Margin="0,0,0,10" Content="Contract question" Tag="I need support with a contract, agreement, or split setup." Click="SupportQuickPrompt_Click" Style="{StaticResource ActionButtonStyle}"/>
-                                <Button x:Name="LaunchPromptButton" Content="Urgent launch help" Tag="Urgent: I need help with a launch, post, or release workflow right now." Click="SupportQuickPrompt_Click" Style="{StaticResource AccentActionButtonStyle}"/>
-                            </StackPanel>
+                            <Grid>
+                                <StackPanel x:Name="UserSupportSidebarPanel">
+                                    <TextBlock Text="Submission helpers" Foreground="#F6FBFD" FontSize="22" FontWeight="Bold"/>
+                                    <TextBlock Margin="0,8,0,16" Foreground="#AFC4CF" TextWrapping="Wrap"
+                                               Text="Pick a quick prompt or write your own note. Every request routes to the master support inbox."/>
+                                    <Border Margin="0,0,0,18" Padding="16" CornerRadius="18" Background="#101A23" BorderBrush="#315063" BorderThickness="1">
+                                        <StackPanel>
+                                            <TextBlock Text="Support visibility" Foreground="#F0B862" FontWeight="SemiBold"/>
+                                            <TextBlock Margin="0,10,0,0" Foreground="#F6FBFD" FontSize="18" FontWeight="Bold" Text="Submission form only"/>
+                                            <TextBlock Margin="0,10,0,0" Foreground="#9FB7C3" TextWrapping="Wrap"
+                                                       Text="Users can send requests, but only the master account can review saved submissions."/>
+                                        </StackPanel>
+                                    </Border>
+                                    <TextBlock Margin="0,0,0,12" Text="Quick prompts" Foreground="#F6FBFD" FontSize="20" FontWeight="Bold"/>
+                                    <Button x:Name="BillingPromptButton" Margin="0,0,0,10" Content="Need billing help" Tag="I need help with billing, invoices, or a recent payment." Click="SupportQuickPrompt_Click" Style="{StaticResource ActionButtonStyle}"/>
+                                    <Button x:Name="AccessPromptButton" Margin="0,0,0,10" Content="Access issue" Tag="I cannot sign in or access the right account on this device." Click="SupportQuickPrompt_Click" Style="{StaticResource ActionButtonStyle}"/>
+                                    <Button x:Name="CalendarPromptButton" Margin="0,0,0,10" Content="Calendar conflict" Tag="I need help with a scheduled task, reminder, or calendar conflict." Click="SupportQuickPrompt_Click" Style="{StaticResource ActionButtonStyle}"/>
+                                    <Button x:Name="ContractsPromptButton" Margin="0,0,0,10" Content="Contract question" Tag="I need support with a contract, agreement, or split setup." Click="SupportQuickPrompt_Click" Style="{StaticResource ActionButtonStyle}"/>
+                                    <Button x:Name="LaunchPromptButton" Content="Urgent launch help" Tag="Urgent: I need help with a launch, post, or release workflow right now." Click="SupportQuickPrompt_Click" Style="{StaticResource AccentActionButtonStyle}"/>
+                                </StackPanel>
+
+                                <StackPanel x:Name="MasterSupportSidebarPanel" Visibility="Collapsed">
+                                    <TextBlock Text="Master support status" Foreground="#F6FBFD" FontSize="22" FontWeight="Bold"/>
+                                    <TextBlock Margin="0,8,0,16" Foreground="#AFC4CF" TextWrapping="Wrap"
+                                               Text="Review every saved support request from one inbox and keep routing visible at a glance."/>
+                                    <UniformGrid Columns="2">
+                                        <Border Margin="0,0,10,10" Padding="14" CornerRadius="16" Background="#101A23" BorderBrush="#315063" BorderThickness="1"><StackPanel><TextBlock Text="Coverage" Foreground="#9FB7C3" FontWeight="SemiBold"/><TextBlock x:Name="SupportCoverageText" Margin="0,10,0,0" Foreground="#F6FBFD" FontSize="18" FontWeight="Bold" TextWrapping="Wrap"/></StackPanel></Border>
+                                        <Border Margin="0,0,0,10" Padding="14" CornerRadius="16" Background="#101A23" BorderBrush="#315063" BorderThickness="1"><StackPanel><TextBlock Text="Inbox state" Foreground="#9FB7C3" FontWeight="SemiBold"/><TextBlock x:Name="SupportThreadStateText" Margin="0,10,0,0" Foreground="#F6FBFD" FontSize="18" FontWeight="Bold" TextWrapping="Wrap"/></StackPanel></Border>
+                                        <Border Margin="0,0,10,0" Padding="14" CornerRadius="16" Background="#101A23" BorderBrush="#315063" BorderThickness="1"><StackPanel><TextBlock Text="Last submission" Foreground="#9FB7C3" FontWeight="SemiBold"/><TextBlock x:Name="SupportLastReplyText" Margin="0,10,0,0" Foreground="#F6FBFD" FontSize="18" FontWeight="Bold" TextWrapping="Wrap"/></StackPanel></Border>
+                                        <Border Padding="14" CornerRadius="16" Background="#101A23" BorderBrush="#315063" BorderThickness="1"><StackPanel><TextBlock Text="Routing lane" Foreground="#9FB7C3" FontWeight="SemiBold"/><TextBlock x:Name="SupportRoutingText" Margin="0,10,0,0" Foreground="#F6FBFD" FontSize="18" FontWeight="Bold" TextWrapping="Wrap"/></StackPanel></Border>
+                                    </UniformGrid>
+                                    <Border Margin="0,18,0,0" Padding="16" CornerRadius="18" Background="#101A23" BorderBrush="#315063" BorderThickness="1">
+                                        <StackPanel>
+                                            <TextBlock Text="Saved inbox" Foreground="#F0B862" FontWeight="SemiBold"/>
+                                            <TextBlock x:Name="SupportMessageCountText" Margin="0,10,0,0" Foreground="#F6FBFD" FontSize="18" FontWeight="Bold"/>
+                                            <TextBlock x:Name="SupportStoragePathText" Margin="0,10,0,0" Foreground="#9FB7C3" FontSize="12" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
                         </Border>
                     </Grid>
 
@@ -431,7 +554,7 @@
                         <StackPanel>
                             <TextBlock Text="Recent activity" Foreground="#F6FBFD" FontSize="22" FontWeight="Bold"/>
                             <TextBlock Margin="0,8,0,14" Text="A clean pulse of what moved across the CRM workspaces and support lane." Foreground="#AFC4CF"/>
-                            <DataGrid x:Name="ActivityGrid">
+                            <DataGrid x:Name="ActivityGrid" Style="{StaticResource TitanDashboardDarkDataGridStyle}">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Workspace" Binding="{Binding Workspace}" Width="*"/>
                                     <DataGridTextColumn Header="Action" Binding="{Binding Action}" Width="2*"/>
@@ -451,6 +574,10 @@
         </Border>
     </Grid>
 </Window>
+
+
+
+
 
 
 

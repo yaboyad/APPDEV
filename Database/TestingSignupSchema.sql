@@ -1,6 +1,6 @@
 ﻿-- Lightweight SQL starter for the signup flow.
--- The current app stores accounts in a DPAPI-protected local file for testing.
--- When you are ready to mirror the same shape into SQL Server, this table is the simplest starting point.
+-- The current app stores accounts and support submissions in local files for testing.
+-- When you are ready to mirror the same shape into SQL Server, these tables are the simplest starting point.
 
 CREATE TABLE dbo.AppUsers
 (
@@ -10,6 +10,7 @@ CREATE TABLE dbo.AppUsers
     LastName NVARCHAR(100) NOT NULL,
     PhoneNumber NVARCHAR(40) NOT NULL,
     Email NVARCHAR(255) NOT NULL,
+    AccountTier NVARCHAR(40) NOT NULL CONSTRAINT DF_AppUsers_AccountTier DEFAULT N'User',
     PasswordSalt NVARCHAR(128) NOT NULL,
     PasswordHash NVARCHAR(128) NOT NULL,
     CreatedUtc DATETIME2 NOT NULL CONSTRAINT DF_AppUsers_CreatedUtc DEFAULT SYSUTCDATETIME()
@@ -20,6 +21,27 @@ CREATE UNIQUE INDEX UX_AppUsers_LoginName ON dbo.AppUsers (LoginName);
 GO
 
 CREATE UNIQUE INDEX UX_AppUsers_Email ON dbo.AppUsers (Email);
+GO
+
+CREATE TABLE dbo.SupportSubmissions
+(
+    SupportSubmissionId INT IDENTITY(1,1) PRIMARY KEY,
+    LoginName NVARCHAR(255) NOT NULL,
+    DisplayName NVARCHAR(255) NOT NULL,
+    Email NVARCHAR(255) NOT NULL,
+    AccountTier NVARCHAR(40) NOT NULL,
+    Channel NVARCHAR(80) NOT NULL,
+    Status NVARCHAR(80) NOT NULL,
+    IsUrgent BIT NOT NULL,
+    Body NVARCHAR(MAX) NOT NULL,
+    CreatedAt DATETIME2 NOT NULL CONSTRAINT DF_SupportSubmissions_CreatedAt DEFAULT SYSUTCDATETIME()
+);
+GO
+
+CREATE INDEX IX_SupportSubmissions_LoginName ON dbo.SupportSubmissions (LoginName, CreatedAt DESC);
+GO
+
+CREATE INDEX IX_SupportSubmissions_CreatedAt ON dbo.SupportSubmissions (CreatedAt DESC);
 GO
 
 -- For later hardening:

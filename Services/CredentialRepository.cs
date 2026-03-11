@@ -4,19 +4,30 @@ using System.IO;
 using System.Linq;
 using System.Net.Mail;
 using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using Label_CRM_demo.Models;
 
 namespace Label_CRM_demo.Services;
 
 public sealed class CredentialRepository
 {
-    private static readonly byte[] Entropy = Encoding.UTF8.GetBytes("Label CRM demo local credential store");
-    private static readonly JsonSerializerOptions SerializerOptions = new JsonSerializerOptions
+    private const string MasterUsername = "Admin";
+    private const string MasterEmail = "admin@local.test";
+    private const string MasterPassword = "Dink1";
+    private const string TestUsername = "Testuser";
+    private const string TestEmail = "testuser@local.test";
+    private const string TestPassword = "Password1";
+    private static readonly byte[] Entropy = System.Text.Encoding.UTF8.GetBytes("Label CRM demo local credential store");
+    private static readonly JsonSerializerOptions SerializerOptions = new()
     {
         WriteIndented = true
     };
+
+    private readonly SemaphoreSlim gate = new(1, 1);
+    private CredentialStore? cachedStore;
+    private bool isInitialized;
 
     public CredentialRepository(string? storagePath = null)
     {
@@ -30,55 +41,83 @@ public sealed class CredentialRepository
     public string StoragePath { get; }
 
     public void EnsureSeeded()
-    {
-        if (File.Exists(StoragePath))
-        {
-            return;
-        }
+        => EnsureSeededAsync().GetAwaiter().GetResult();
 
-        SaveStore(new CredentialStore
+    public async Task EnsureSeededAsync(CancellationToken cancellationToken = default)
+    {
+        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
         {
-            Users = new List<StoredUser>
-            {
-                CreateStoredUser("Admin", "Admin", string.Empty, string.Empty, "admin@local.test", "Dink1")
-            }
-        });
+            await EnsureSeededCoreAsync(cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public bool TryAuthenticate(string usernameOrEmail, string password, out AuthenticatedUser? user)
     {
-        user = null;
+        user = AuthenticateAsync(usernameOrEmail, password).GetAwaiter().GetResult();
+        return user is not null;
+    }
 
+    public async Task<AuthenticatedUser?> AuthenticateAsync(
+        string usernameOrEmail,
+        string password,
+        CancellationToken cancellationToken = default)
+    {
         var identifier = NormalizeIdentifier(usernameOrEmail);
         if (string.IsNullOrWhiteSpace(identifier) || string.IsNullOrWhiteSpace(password))
         {
-            return false;
+            return null;
         }
 
-        var store = LoadStore();
-        var record = store.Users.FirstOrDefault(candidate =>
-            string.Equals(candidate.Username, identifier, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(candidate.Email, identifier, StringComparison.OrdinalIgnoreCase));
-
-        if (record is null)
+        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
         {
-            return false;
-        }
+            var store = await LoadStoreCoreAsync(cancellationToken).ConfigureAwait(false);
+            var record = store.Users.FirstOrDefault(candidate =>
+                string.Equals(candidate.Username, identifier, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(candidate.Email, identifier, StringComparison.OrdinalIgnoreCase));
 
-        if (!VerifyPassword(password, record.PasswordSalt, record.PasswordHash))
+            if (record is null)
+            {
+                return null;
+            }
+
+            bool passwordVerified;
+            try
+            {
+                passwordVerified = await Task.Run(
+                    () => VerifyPassword(password, record.PasswordSalt, record.PasswordHash),
+                    cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                return null;
+            }
+
+            return passwordVerified ? ToAuthenticatedUser(record) : null;
+        }
+        finally
         {
-            return false;
+            gate.Release();
         }
-
-        user = ToAuthenticatedUser(record);
-        return true;
     }
 
     public bool TryRegister(SignupRequest request, out AuthenticatedUser? user, out string errorMessage)
     {
-        user = null;
-        errorMessage = string.Empty;
+        var result = RegisterAsync(request).GetAwaiter().GetResult();
+        user = result.User;
+        errorMessage = result.ErrorMessage;
+        return user is not null;
+    }
 
+    public async Task<(AuthenticatedUser? User, string ErrorMessage)> RegisterAsync(
+        SignupRequest request,
+        CancellationToken cancellationToken = default)
+    {
         var firstName = NormalizeName(request.FirstName);
         var lastName = NormalizeName(request.LastName);
         var phoneNumber = NormalizePhoneNumber(request.PhoneNumber);
@@ -87,85 +126,152 @@ public sealed class CredentialRepository
 
         if (string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName))
         {
-            errorMessage = "First name and last name are required.";
-            return false;
+            return (null, "First name and last name are required.");
         }
 
         if (!IsValidPhoneNumber(phoneNumber))
         {
-            errorMessage = "Enter a valid phone number for testing.";
-            return false;
+            return (null, "Enter a valid phone number for testing.");
         }
 
         if (!IsValidEmail(email))
         {
-            errorMessage = "Enter a valid email address.";
-            return false;
+            return (null, "Enter a valid email address.");
         }
 
         if (string.IsNullOrWhiteSpace(password) || password.Length < 6)
         {
-            errorMessage = "Use a password with at least 6 characters.";
-            return false;
+            return (null, "Use a password with at least 6 characters.");
         }
 
-        var store = LoadStore();
-        var duplicateUser = store.Users.Any(candidate =>
-            string.Equals(candidate.Email, email, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(candidate.Username, email, StringComparison.OrdinalIgnoreCase));
-
-        if (duplicateUser)
+        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
         {
-            errorMessage = "An account with that email already exists.";
-            return false;
+            var store = await LoadStoreCoreAsync(cancellationToken).ConfigureAwait(false);
+            var duplicateUser = store.Users.Any(candidate =>
+                string.Equals(candidate.Email, email, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(candidate.Username, email, StringComparison.OrdinalIgnoreCase));
+
+            if (duplicateUser)
+            {
+                return (null, "An account with that email already exists.");
+            }
+
+            var storedUser = await Task.Run(
+                () => CreateStoredUser(email, firstName, lastName, phoneNumber, email, password, AccountTiers.User),
+                cancellationToken).ConfigureAwait(false);
+
+            store.Users.Add(storedUser);
+            await SaveStoreCoreAsync(store, cancellationToken).ConfigureAwait(false);
+            return (ToAuthenticatedUser(storedUser), string.Empty);
         }
-
-        var storedUser = CreateStoredUser(email, firstName, lastName, phoneNumber, email, password);
-        store.Users.Add(storedUser);
-        SaveStore(store);
-
-        user = ToAuthenticatedUser(storedUser);
-        return true;
+        finally
+        {
+            gate.Release();
+        }
     }
 
-    private CredentialStore LoadStore()
+    private async Task EnsureSeededCoreAsync(CancellationToken cancellationToken)
     {
-        EnsureSeeded();
+        if (isInitialized)
+        {
+            return;
+        }
+
+        var directory = Path.GetDirectoryName(StoragePath)
+            ?? throw new InvalidOperationException("Credential store path is invalid.");
+
+        Directory.CreateDirectory(directory);
+
+        CredentialStore store;
+        var shouldSave = false;
+
+        if (!File.Exists(StoragePath))
+        {
+            store = new CredentialStore();
+            shouldSave = true;
+        }
+        else
+        {
+            try
+            {
+                store = await LoadStoreWithoutRecoveryCoreAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                await BackupCorruptStoreCoreAsync(cancellationToken).ConfigureAwait(false);
+                File.Delete(StoragePath);
+                store = new CredentialStore();
+                shouldSave = true;
+            }
+        }
+
+        if (EnsureRequiredUsers(store))
+        {
+            shouldSave = true;
+        }
+
+        cachedStore = store;
+
+        if (shouldSave)
+        {
+            await SaveStoreCoreAsync(store, cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
+        isInitialized = true;
+    }
+
+    private async Task<CredentialStore> LoadStoreCoreAsync(CancellationToken cancellationToken)
+    {
+        await EnsureSeededCoreAsync(cancellationToken).ConfigureAwait(false);
+
+        if (cachedStore is not null)
+        {
+            return cachedStore;
+        }
 
         try
         {
-            var encryptedBytes = File.ReadAllBytes(StoragePath);
-            var clearBytes = ProtectedData.Unprotect(encryptedBytes, Entropy, DataProtectionScope.CurrentUser);
-            var json = Encoding.UTF8.GetString(clearBytes);
-            var store = JsonSerializer.Deserialize<CredentialStore>(json, SerializerOptions);
+            cachedStore = await LoadStoreWithoutRecoveryCoreAsync(cancellationToken).ConfigureAwait(false);
 
-            if (store is null || store.Users.Count == 0)
+            if (cachedStore.Users.Count == 0)
             {
                 throw new InvalidDataException("Credential store is empty.");
             }
 
-            return store;
+            isInitialized = true;
+            return cachedStore;
         }
         catch
         {
-            BackupCorruptStore();
-            File.Delete(StoragePath);
-            EnsureSeeded();
-            return LoadStoreWithoutRecovery();
+            await BackupCorruptStoreCoreAsync(cancellationToken).ConfigureAwait(false);
+
+            if (File.Exists(StoragePath))
+            {
+                File.Delete(StoragePath);
+            }
+
+            cachedStore = null;
+            isInitialized = false;
+            await EnsureSeededCoreAsync(cancellationToken).ConfigureAwait(false);
+            return cachedStore ?? throw new InvalidDataException("Unable to rebuild the credential store.");
         }
     }
 
-    private CredentialStore LoadStoreWithoutRecovery()
+    private async Task<CredentialStore> LoadStoreWithoutRecoveryCoreAsync(CancellationToken cancellationToken)
     {
-        var encryptedBytes = File.ReadAllBytes(StoragePath);
-        var clearBytes = ProtectedData.Unprotect(encryptedBytes, Entropy, DataProtectionScope.CurrentUser);
-        var json = Encoding.UTF8.GetString(clearBytes);
+        var encryptedBytes = await RepositoryFileStore.ReadAllBytesAsync(StoragePath, cancellationToken).ConfigureAwait(false);
 
-        return JsonSerializer.Deserialize<CredentialStore>(json, SerializerOptions)
-            ?? throw new InvalidDataException("Unable to load credential store.");
+        return await Task.Run(() =>
+        {
+            var clearBytes = ProtectedData.Unprotect(encryptedBytes, Entropy, DataProtectionScope.CurrentUser);
+            return JsonSerializer.Deserialize<CredentialStore>(clearBytes, SerializerOptions)
+                ?? throw new InvalidDataException("Unable to load credential store.");
+        }, cancellationToken).ConfigureAwait(false);
     }
 
-    private void BackupCorruptStore()
+    private async Task BackupCorruptStoreCoreAsync(CancellationToken cancellationToken)
     {
         if (!File.Exists(StoragePath))
         {
@@ -173,21 +279,25 @@ public sealed class CredentialRepository
         }
 
         var backupPath = StoragePath + ".broken-" + DateTime.Now.ToString("yyyyMMddHHmmss");
-        File.Copy(StoragePath, backupPath, overwrite: true);
+        await RepositoryFileStore.CopyAsync(StoragePath, backupPath, cancellationToken).ConfigureAwait(false);
     }
 
-    private void SaveStore(CredentialStore store)
+    private async Task SaveStoreCoreAsync(CredentialStore store, CancellationToken cancellationToken)
     {
         var directory = Path.GetDirectoryName(StoragePath)
             ?? throw new InvalidOperationException("Credential store path is invalid.");
 
         Directory.CreateDirectory(directory);
 
-        var json = JsonSerializer.Serialize(store, SerializerOptions);
-        var clearBytes = Encoding.UTF8.GetBytes(json);
-        var encryptedBytes = ProtectedData.Protect(clearBytes, Entropy, DataProtectionScope.CurrentUser);
+        var encryptedBytes = await Task.Run(() =>
+        {
+            var clearBytes = JsonSerializer.SerializeToUtf8Bytes(store, SerializerOptions);
+            return ProtectedData.Protect(clearBytes, Entropy, DataProtectionScope.CurrentUser);
+        }, cancellationToken).ConfigureAwait(false);
 
-        File.WriteAllBytes(StoragePath, encryptedBytes);
+        cachedStore = store;
+        await RepositoryFileStore.WriteAllBytesAtomicAsync(StoragePath, encryptedBytes, cancellationToken).ConfigureAwait(false);
+        isInitialized = true;
     }
 
     private static StoredUser CreateStoredUser(
@@ -196,7 +306,8 @@ public sealed class CredentialRepository
         string lastName,
         string phoneNumber,
         string email,
-        string password)
+        string password,
+        string accountTier)
     {
         var saltBytes = RandomNumberGenerator.GetBytes(16);
         var salt = Convert.ToBase64String(saltBytes);
@@ -209,6 +320,7 @@ public sealed class CredentialRepository
             LastName = lastName,
             PhoneNumber = phoneNumber,
             Email = NormalizeEmail(email),
+            AccountTier = AccountTiers.Normalize(accountTier),
             PasswordSalt = salt,
             PasswordHash = ComputeHash(password, salt)
         };
@@ -216,7 +328,7 @@ public sealed class CredentialRepository
 
     private static string ComputeHash(string password, string salt)
     {
-        var passwordBytes = Encoding.UTF8.GetBytes(password);
+        var passwordBytes = System.Text.Encoding.UTF8.GetBytes(password);
         var saltBytes = Convert.FromBase64String(salt);
         var combinedBytes = new byte[saltBytes.Length + passwordBytes.Length];
 
@@ -242,7 +354,151 @@ public sealed class CredentialRepository
         record.FirstName,
         record.LastName,
         record.PhoneNumber,
-        record.Email);
+        record.Email,
+        AccountTiers.Normalize(record.AccountTier));
+
+    private static bool EnsureRequiredUsers(CredentialStore store)
+    {
+        var changed = false;
+
+        foreach (var user in store.Users)
+        {
+            changed = NormalizeStoredUser(user) || changed;
+        }
+
+        changed = UpsertRequiredUser(
+            store,
+            MasterUsername,
+            "Admin",
+            string.Empty,
+            string.Empty,
+            MasterEmail,
+            MasterPassword,
+            AccountTiers.Master,
+            resetPassword: false) || changed;
+
+        changed = UpsertRequiredUser(
+            store,
+            TestUsername,
+            "Test",
+            "User",
+            "317-555-0101",
+            TestEmail,
+            TestPassword,
+            AccountTiers.User,
+            resetPassword: true) || changed;
+
+        return changed;
+    }
+
+    private static bool UpsertRequiredUser(
+        CredentialStore store,
+        string username,
+        string firstName,
+        string lastName,
+        string phoneNumber,
+        string email,
+        string password,
+        string accountTier,
+        bool resetPassword)
+    {
+        var index = store.Users.FindIndex(candidate =>
+            string.Equals(candidate.Username, username, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(candidate.Email, email, StringComparison.OrdinalIgnoreCase));
+
+        if (index < 0)
+        {
+            store.Users.Add(CreateStoredUser(username, firstName, lastName, phoneNumber, email, password, accountTier));
+            return true;
+        }
+
+        var user = store.Users[index];
+        var changed = false;
+
+        changed = SetValue(user.Username, NormalizeIdentifier(username), value => user.Username = value) || changed;
+        changed = SetValue(user.FirstName, NormalizeName(firstName), value => user.FirstName = value) || changed;
+        changed = SetValue(user.LastName, NormalizeName(lastName), value => user.LastName = value) || changed;
+        changed = SetValue(user.PhoneNumber, NormalizePhoneNumber(phoneNumber), value => user.PhoneNumber = value) || changed;
+        changed = SetValue(user.Email, NormalizeEmail(email), value => user.Email = value) || changed;
+        changed = SetValue(user.DisplayName, BuildDisplayName(firstName, lastName, username), value => user.DisplayName = value) || changed;
+        changed = SetValue(user.AccountTier, AccountTiers.Normalize(accountTier), value => user.AccountTier = value) || changed;
+
+        if ((resetPassword && NeedsPasswordReset(user, password))
+            || string.IsNullOrWhiteSpace(user.PasswordSalt)
+            || string.IsNullOrWhiteSpace(user.PasswordHash))
+        {
+            SetPassword(user, password);
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    private static bool NormalizeStoredUser(StoredUser user)
+    {
+        var changed = false;
+        var normalizedUsername = NormalizeIdentifier(user.Username);
+        var normalizedFirstName = NormalizeName(user.FirstName);
+        var normalizedLastName = NormalizeName(user.LastName);
+        var normalizedPhoneNumber = NormalizePhoneNumber(user.PhoneNumber);
+        var normalizedEmail = NormalizeEmail(user.Email);
+        var normalizedDisplayName = string.IsNullOrWhiteSpace(user.DisplayName)
+            ? BuildDisplayName(normalizedFirstName, normalizedLastName, normalizedUsername)
+            : user.DisplayName.Trim();
+        var normalizedTier = IsMasterIdentity(normalizedUsername, normalizedEmail)
+            ? AccountTiers.Master
+            : AccountTiers.Normalize(user.AccountTier);
+
+        changed = SetValue(user.Username, normalizedUsername, value => user.Username = value) || changed;
+        changed = SetValue(user.FirstName, normalizedFirstName, value => user.FirstName = value) || changed;
+        changed = SetValue(user.LastName, normalizedLastName, value => user.LastName = value) || changed;
+        changed = SetValue(user.PhoneNumber, normalizedPhoneNumber, value => user.PhoneNumber = value) || changed;
+        changed = SetValue(user.Email, normalizedEmail, value => user.Email = value) || changed;
+        changed = SetValue(user.DisplayName, normalizedDisplayName, value => user.DisplayName = value) || changed;
+        changed = SetValue(user.AccountTier, normalizedTier, value => user.AccountTier = value) || changed;
+
+        return changed;
+    }
+
+    private static bool SetValue(string currentValue, string value, Action<string> setter)
+    {
+        if (string.Equals(currentValue, value, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        setter(value);
+        return true;
+    }
+
+    private static void SetPassword(StoredUser user, string password)
+    {
+        var saltBytes = RandomNumberGenerator.GetBytes(16);
+        var salt = Convert.ToBase64String(saltBytes);
+        user.PasswordSalt = salt;
+        user.PasswordHash = ComputeHash(password, salt);
+    }
+
+    private static bool NeedsPasswordReset(StoredUser user, string password)
+    {
+        if (string.IsNullOrWhiteSpace(user.PasswordSalt) || string.IsNullOrWhiteSpace(user.PasswordHash))
+        {
+            return true;
+        }
+
+        try
+        {
+            return !VerifyPassword(password, user.PasswordSalt, user.PasswordHash);
+        }
+        catch
+        {
+            return true;
+        }
+    }
+
+    private static bool IsMasterIdentity(string username, string email)
+        => string.Equals(username, MasterUsername, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(email, MasterEmail, StringComparison.OrdinalIgnoreCase);
 
     private static string BuildDisplayName(string firstName, string lastName, string fallback)
     {
@@ -276,7 +532,7 @@ public sealed class CredentialRepository
 
     private sealed class CredentialStore
     {
-        public List<StoredUser> Users { get; set; } = new List<StoredUser>();
+        public List<StoredUser> Users { get; set; } = new();
     }
 
     private sealed class StoredUser
@@ -287,6 +543,7 @@ public sealed class CredentialRepository
         public string LastName { get; set; } = string.Empty;
         public string PhoneNumber { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
+        public string AccountTier { get; set; } = AccountTiers.User;
         public string PasswordHash { get; set; } = string.Empty;
         public string PasswordSalt { get; set; } = string.Empty;
     }

@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using System.Net.Mail;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -25,22 +26,24 @@ public partial class Window2 : Window
     private readonly AuthenticatedUser currentUser;
     private readonly WorkspaceRepository workspaceRepository;
     private readonly CalendarRepository calendarRepository;
-    private readonly SupportConversationRepository supportConversationRepository;
-    private readonly ObservableCollection<SupportMessageRow> supportMessages = new ObservableCollection<SupportMessageRow>();
+    private readonly SupportSubmissionRepository supportSubmissionRepository;
+    private readonly ObservableCollection<SupportSubmissionRecord> supportSubmissions = new ObservableCollection<SupportSubmissionRecord>();
     private readonly ObservableCollection<ContactRecord> contacts = new ObservableCollection<ContactRecord>();
     private readonly ObservableCollection<ContractRecord> contracts = new ObservableCollection<ContractRecord>();
     private readonly ObservableCollection<CalendarEventRecord> calendarItems = new ObservableCollection<CalendarEventRecord>();
     private readonly ObservableCollection<ActivityRow> activityRows = new ObservableCollection<ActivityRow>();
     private string? editingContactId;
     private string? editingContractId;
+    private bool hasCompletedInitialDashboardLoad;
+    private bool isRefreshingDashboard;
 
     public Window2()
-        : this(new AuthenticatedUser("Admin", "Admin"), App.WorkspaceData, App.CalendarEvents, new SupportConversationRepository())
+        : this(new AuthenticatedUser("Admin", "Admin", AccountTier: AccountTiers.Master), App.WorkspaceData, App.CalendarEvents, new SupportSubmissionRepository())
     {
     }
 
     public Window2(AuthenticatedUser currentUser)
-        : this(currentUser, App.WorkspaceData, App.CalendarEvents, new SupportConversationRepository())
+        : this(currentUser, App.WorkspaceData, App.CalendarEvents, new SupportSubmissionRepository())
     {
     }
 
@@ -48,33 +51,36 @@ public partial class Window2 : Window
         AuthenticatedUser currentUser,
         WorkspaceRepository workspaceRepository,
         CalendarRepository calendarRepository,
-        SupportConversationRepository supportConversationRepository)
+        SupportSubmissionRepository supportSubmissionRepository)
     {
+        using var initTiming = PerformanceInstrumentation.Measure("dashboard.window-init", ("user", currentUser.Username), ("tier", currentUser.TierLabel));
         this.currentUser = currentUser;
         this.workspaceRepository = workspaceRepository;
         this.calendarRepository = calendarRepository;
-        this.supportConversationRepository = supportConversationRepository;
+        this.supportSubmissionRepository = supportSubmissionRepository;
 
         InitializeComponent();
         InitializeInteractiveStates();
 
-        SupportMessagesItemsControl.ItemsSource = supportMessages;
+        SupportSubmissionsGrid.ItemsSource = supportSubmissions;
         ContactsGrid.ItemsSource = contacts;
         ContractsGrid.ItemsSource = contracts;
         CalendarGrid.ItemsSource = calendarItems;
         ActivityGrid.ItemsSource = activityRows;
 
-        SetSupportStatus("Support inbox ready.", SupportNeutralBrush);
+        SetSupportStatus("Support center ready.", SupportNeutralBrush);
         SetContactStatus("Add a contact or select one below to edit it.", SupportNeutralBrush);
         SetContractStatus("Add a contract or select one below to edit it.", SupportNeutralBrush);
         ContractTypeBox.SelectedIndex = 0;
         ContractStateBox.SelectedIndex = 0;
         ContractStartPicker.SelectedDate = DateTime.Today;
+        initTiming.Checkpoint("controls-ready");
+        calendarRepository.EventsChanged += CalendarRepository_EventsChanged;
 
-        Activated += (_, _) =>
+        Activated += async (_, _) =>
         {
-            UpdateSupportSummary();
-            LoadDashboardData();
+            var refreshMetric = hasCompletedInitialDashboardLoad ? "dashboard.reactivated-refresh" : "dashboard.initial-activation-refresh";
+            await RefreshDashboardDataAsync(refreshMetric);
         };
 
         clockTimer.Interval = TimeSpan.FromSeconds(1);
@@ -84,12 +90,15 @@ public partial class Window2 : Window
     private static SolidColorBrush CreateBrush(string hex)
         => (SolidColorBrush)new BrushConverter().ConvertFromString(hex)!;
 
-    private void Window_Loaded(object sender, RoutedEventArgs e)
+    private async void Window_Loaded(object sender, RoutedEventArgs e)
     {
+        using var loadTiming = PerformanceInstrumentation.Measure("dashboard.window-loaded", ("user", currentUser.Username), ("tier", currentUser.TierLabel));
         clockTimer.Start();
+        loadTiming.Checkpoint("clock-started");
         ApplyUserState();
-        LoadSupportConversation();
-        LoadDashboardData();
+        loadTiming.Checkpoint("user-state-applied");
+        await RefreshDashboardDataAsync("dashboard.window-loaded-refresh");
+        loadTiming.Checkpoint("dashboard-loaded", ("contacts", contacts.Count), ("contracts", contracts.Count), ("calendarItems", calendarItems.Count));
 
         UiAnimator.PlayEntrance(new FrameworkElement[]
         {
@@ -108,6 +117,33 @@ public partial class Window2 : Window
             SupportSummaryCard,
             ActivitySection
         }, 28, 70);
+
+        loadTiming.Checkpoint("animations-queued");
+        PerformanceInstrumentation.Log("dashboard.ready", ("user", currentUser.Username), ("contacts", contacts.Count), ("contracts", contracts.Count));
+    }
+
+    private async Task RefreshDashboardDataAsync(string operationName)
+    {
+        if (isRefreshingDashboard)
+        {
+            return;
+        }
+
+        isRefreshingDashboard = true;
+
+        try
+        {
+            using var refreshTiming = PerformanceInstrumentation.Measure(operationName, ("user", currentUser.Username));
+            await LoadSupportDataAsync();
+            refreshTiming.Checkpoint("support-ready", ("submissions", supportSubmissions.Count));
+            await LoadDashboardDataAsync();
+            refreshTiming.Checkpoint("workspace-ready", ("contacts", contacts.Count), ("contracts", contracts.Count), ("calendarItems", calendarItems.Count));
+            hasCompletedInitialDashboardLoad = true;
+        }
+        finally
+        {
+            isRefreshingDashboard = false;
+        }
     }
 
     private void InitializeInteractiveStates()
@@ -159,34 +195,65 @@ public partial class Window2 : Window
 
     private void ApplyUserState()
     {
-        UserNameText.Text = currentUser.DisplayName;
-        WelcomeText.Text = $"Welcome back, {currentUser.DisplayName}";
-        AccountStatusText.Text = "Protected";
+        UserNameText.Text = $"{currentUser.DisplayName} | {currentUser.TierLabel}";
+        WelcomeText.Text = currentUser.IsMaster
+            ? $"Master workspace for {currentUser.DisplayName}"
+            : $"Welcome back, {currentUser.DisplayName}";
+        AccountStatusText.Text = currentUser.TierLabel;
         NextPaymentText.Text = "$49.00";
         NextPaymentDateText.Text = $"Due {GetNextPaymentDueDate(DateTime.Today):MMMM dd}";
+        ConfigureSupportExperience();
     }
 
-    private void LoadDashboardData()
+    private void ConfigureSupportExperience()
     {
+        if (currentUser.IsMaster)
+        {
+            SupportIntroText.Text = "Master accounts can review every saved support submission across all accounts from one inbox.";
+            UserSupportFormPanel.Visibility = Visibility.Collapsed;
+            UserSupportSidebarPanel.Visibility = Visibility.Collapsed;
+            MasterSupportInboxPanel.Visibility = Visibility.Visible;
+            MasterSupportSidebarPanel.Visibility = Visibility.Visible;
+            SetSupportStatus("Master inbox ready.", SupportNeutralBrush);
+            return;
+        }
+
+        SupportIntroText.Text = "User accounts can submit support requests here. Only the master account can review saved submissions.";
+        UserSupportFormPanel.Visibility = Visibility.Visible;
+        UserSupportSidebarPanel.Visibility = Visibility.Visible;
+        MasterSupportInboxPanel.Visibility = Visibility.Collapsed;
+        MasterSupportSidebarPanel.Visibility = Visibility.Collapsed;
+        SetSupportStatus("Support request form ready.", SupportNeutralBrush);
+    }
+
+    private async Task LoadDashboardDataAsync()
+    {
+        using var loadTiming = PerformanceInstrumentation.Measure("dashboard.load-data", ("user", currentUser.Username));
         PaymentsGrid.ItemsSource = BuildPaymentRows();
-        LoadWorkspaceData();
+        loadTiming.Checkpoint("payments-bound");
+        await LoadWorkspaceDataAsync();
+        loadTiming.Checkpoint("workspace-bound", ("contacts", contacts.Count), ("contracts", contracts.Count), ("calendarItems", calendarItems.Count));
     }
 
-    private void LoadWorkspaceData()
+    private async Task LoadWorkspaceDataAsync()
     {
-        var snapshot = workspaceRepository.LoadForUser(currentUser.Username);
+        using var loadTiming = PerformanceInstrumentation.Measure("dashboard.load-workspace", ("user", currentUser.Username));
+        var snapshot = await workspaceRepository.LoadForUserAsync(currentUser.Username);
+        loadTiming.Checkpoint("snapshot-loaded", ("contacts", snapshot.Contacts.Count), ("contracts", snapshot.Contracts.Count));
         ReplaceCollection(contacts, snapshot.Contacts);
         ReplaceCollection(contracts, snapshot.Contracts);
-        SyncWorkspaceCalendarEvents();
-        RefreshCalendarGrid();
+        await SyncWorkspaceCalendarEventsAsync();
+        loadTiming.Checkpoint("calendar-synced");
+        await RefreshCalendarGridAsync();
         RefreshDashboardSummary();
         RefreshStorageSummary();
-        RefreshActivityGrid();
+        await RefreshActivityGridAsync();
+        loadTiming.Checkpoint("ui-refreshed", ("calendarItems", calendarItems.Count));
     }
 
-    private void RefreshCalendarGrid()
+    private async Task RefreshCalendarGridAsync()
     {
-        ReplaceCollection(calendarItems, calendarRepository.GetUpcomingEvents(8));
+        ReplaceCollection(calendarItems, await calendarRepository.GetUpcomingEventsAsync(8));
     }
 
     private void RefreshDashboardSummary()
@@ -202,17 +269,25 @@ public partial class Window2 : Window
         StorageText.Text = $"{contacts.Count} contacts / {contracts.Count} contracts{Environment.NewLine}CRM: {workspaceRepository.StoragePath}{Environment.NewLine}Calendar: {calendarRepository.StoragePath}";
     }
 
-    private void RefreshActivityGrid()
+    private async Task RefreshActivityGridAsync()
     {
         var latestContact = contacts.OrderByDescending(contact => contact.UpdatedUtc).FirstOrDefault();
         var latestContract = contracts.OrderByDescending(contract => contract.UpdatedUtc).FirstOrDefault();
-        var latestSupportMessage = supportMessages.LastOrDefault();
+        var latestSupportSubmission = supportSubmissions.FirstOrDefault();
         var nextCalendarEvent = calendarItems.FirstOrDefault();
-        var calendarStatus = calendarRepository.GetUpcomingEvents(12).Any(item =>
+        var syncedEvents = await calendarRepository.GetUpcomingEventsAsync(12);
+        var calendarStatus = syncedEvents.Any(item =>
             !string.IsNullOrWhiteSpace(item.GoogleEventId) ||
             !string.IsNullOrWhiteSpace(item.AppleEventHref))
             ? "Synced"
             : "Local";
+        var supportAction = latestSupportSubmission is null
+            ? currentUser.IsMaster ? "Master inbox is clear" : "Support form is ready"
+            : currentUser.IsMaster
+                ? $"{latestSupportSubmission.Channel} request from {latestSupportSubmission.SubmittedByLabel}"
+                : $"{latestSupportSubmission.Channel} request submitted";
+        var supportOwner = latestSupportSubmission?.SubmittedByLabel ?? (currentUser.IsMaster ? "All accounts" : currentUser.DisplayName);
+        var supportStatus = latestSupportSubmission is null ? "Ready" : latestSupportSubmission.PriorityLabel;
 
         ReplaceCollection(activityRows, new[]
         {
@@ -233,37 +308,86 @@ public partial class Window2 : Window
                 calendarStatus),
             new ActivityRow(
                 "Support",
-                latestSupportMessage is null ? "Support inbox is standing by" : $"{latestSupportMessage.Channel} thread updated",
-                latestSupportMessage?.SenderName ?? "Titan Support",
-                latestSupportMessage?.IsUrgent == true ? "Priority" : "Open")
+                supportAction,
+                supportOwner,
+                supportStatus)
         });
     }
 
-    private void LoadSupportConversation()
+    private async Task LoadSupportDataAsync()
     {
-        supportMessages.Clear();
+        using var loadTiming = PerformanceInstrumentation.Measure("dashboard.load-support", ("user", currentUser.Username), ("master", currentUser.IsMaster));
+        var submissions = currentUser.IsMaster
+            ? await supportSubmissionRepository.LoadAllAsync()
+            : await supportSubmissionRepository.LoadForUserAsync(currentUser);
 
-        foreach (var message in supportConversationRepository.LoadConversation(currentUser))
+        ReplaceCollection(supportSubmissions, submissions);
+
+        if (currentUser.IsMaster)
         {
-            supportMessages.Add(message);
+            var selectedSubmission = SupportSubmissionsGrid.SelectedItem as SupportSubmissionRecord;
+            if (selectedSubmission is not null)
+            {
+                var refreshedSelection = supportSubmissions.FirstOrDefault(item => string.Equals(item.Id, selectedSubmission.Id, StringComparison.OrdinalIgnoreCase));
+                if (refreshedSelection is not null)
+                {
+                    SupportSubmissionsGrid.SelectedItem = refreshedSelection;
+                    ApplySelectedSupportSubmission(refreshedSelection);
+                }
+                else
+                {
+                    SupportSubmissionsGrid.SelectedItem = supportSubmissions.FirstOrDefault();
+                    ApplySelectedSupportSubmission(SupportSubmissionsGrid.SelectedItem as SupportSubmissionRecord);
+                }
+            }
+            else
+            {
+                SupportSubmissionsGrid.SelectedItem = supportSubmissions.FirstOrDefault();
+                ApplySelectedSupportSubmission(SupportSubmissionsGrid.SelectedItem as SupportSubmissionRecord);
+            }
         }
 
         UpdateSupportSummary();
-        SetSupportStatus("Support inbox ready.", SupportNeutralBrush);
-        ScrollSupportTranscriptToEnd();
+        await RefreshActivityGridAsync();
+        loadTiming.Checkpoint("support-ready", ("submissions", supportSubmissions.Count));
     }
 
     private void UpdateSupportSummary()
     {
-        var latestMessage = supportMessages.LastOrDefault();
-        var latestReply = supportMessages.LastOrDefault(message => !message.IsFromUser);
+        if (!currentUser.IsMaster)
+        {
+            return;
+        }
 
-        SupportCoverageText.Text = "Automated 24/7";
-        SupportThreadStateText.Text = supportMessages.Count == 0 ? "Idle" : "Open";
-        SupportLastReplyText.Text = latestReply is null ? "Waiting" : latestReply.CreatedAt.ToString("MMM dd, h:mm tt", CultureInfo.CurrentCulture);
-        SupportRoutingText.Text = latestMessage?.Channel ?? "General";
-        SupportMessageCountText.Text = $"{supportMessages.Count} saved message(s)";
-        SupportStoragePathText.Text = supportConversationRepository.GetStoragePath(currentUser);
+        var latestSubmission = supportSubmissions.FirstOrDefault();
+        SupportCoverageText.Text = "All accounts";
+        SupportThreadStateText.Text = supportSubmissions.Count == 0 ? "Inbox clear" : $"{supportSubmissions.Count} saved";
+        SupportLastReplyText.Text = latestSubmission is null ? "No submissions" : latestSubmission.CreatedAt.ToString("MMM dd, h:mm tt", CultureInfo.CurrentCulture);
+        SupportRoutingText.Text = latestSubmission?.Channel ?? "General";
+        SupportMessageCountText.Text = $"{supportSubmissions.Count} saved submission(s)";
+        SupportStoragePathText.Text = supportSubmissionRepository.StoragePath;
+
+        if (SupportSubmissionsGrid.SelectedItem is not SupportSubmissionRecord selectedSubmission)
+        {
+            ApplySelectedSupportSubmission(latestSubmission);
+        }
+        else
+        {
+            ApplySelectedSupportSubmission(selectedSubmission);
+        }
+    }
+
+    private void ApplySelectedSupportSubmission(SupportSubmissionRecord? submission)
+    {
+        if (submission is null)
+        {
+            SelectedSupportSubmissionMetaText.Text = "No support submissions yet.";
+            SelectedSupportSubmissionBodyText.Text = "New requests from user accounts will appear here for review.";
+            return;
+        }
+
+        SelectedSupportSubmissionMetaText.Text = $"{submission.SubmittedByLabel} | {submission.TierLabel} | {submission.Channel} | {submission.PriorityLabel} | {submission.CreatedAt:MMM dd, h:mm tt}";
+        SelectedSupportSubmissionBodyText.Text = submission.Body;
     }
     private void Nav_Overview_Click(object sender, RoutedEventArgs e)
     {
@@ -278,56 +402,59 @@ public partial class Window2 : Window
         => OpenModule(ModuleWindowState.CreatePayments());
 
     private void Nav_Contracts_Click(object sender, RoutedEventArgs e)
-        => FocusSection(ContractsManagerSection);
+        => OpenContractsWorkspace();
 
     private void Nav_Calendar_Click(object sender, RoutedEventArgs e)
         => OpenCalendarWorkspace();
 
     private void Nav_SMSManager_Click(object sender, RoutedEventArgs e)
-        => FocusSection(ContactsSection);
+        => OpenContactsWorkspace();
 
     private void Nav_EmailManager_Click(object sender, RoutedEventArgs e)
         => OpenModule(ModuleWindowState.CreateEmailManager());
 
     private void Nav_Support_Click(object sender, RoutedEventArgs e)
-        => FocusSection(SupportSection);
+        => OpenSupportWorkspace();
 
     private void AddPayment_Click(object sender, RoutedEventArgs e)
         => OpenModule(ModuleWindowState.CreatePayments());
 
     private void CreateContract_Click(object sender, RoutedEventArgs e)
-        => FocusSection(ContractsManagerSection);
+        => OpenContractsWorkspace();
 
     private void NewContact_Click(object sender, RoutedEventArgs e)
-        => FocusSection(ContactsSection);
+        => OpenContactsWorkspace();
 
     private void OpenSupportCenter_Click(object sender, RoutedEventArgs e)
-        => FocusSection(SupportSection);
+        => OpenSupportWorkspace();
 
-    private void SendSupportMessage_Click(object sender, RoutedEventArgs e)
+    private async void SendSupportMessage_Click(object sender, RoutedEventArgs e)
     {
+        using var saveTiming = PerformanceInstrumentation.Measure("support.save", ("user", currentUser.Username));
+        if (currentUser.IsMaster)
+        {
+            saveTiming.Checkpoint("skipped-master");
+            return;
+        }
+
         var messageText = SupportComposerTextBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(messageText))
         {
+            saveTiming.Checkpoint("validation-failed", ("reason", "empty-message"));
             SetSupportStatus("Write a support message before sending it.", SupportErrorBrush);
             SupportComposerTextBox.Focus();
             return;
         }
 
-        var userMessage = supportConversationRepository.CreateUserMessage(currentUser, messageText);
-        var automatedReply = supportConversationRepository.CreateAutomatedReply(currentUser, messageText);
-
-        supportMessages.Add(userMessage);
-        supportMessages.Add(automatedReply);
-        SaveSupportConversation();
+        var submission = await supportSubmissionRepository.SubmitAsync(currentUser, messageText);
+        saveTiming.Checkpoint("submission-persisted", ("channel", submission.Channel), ("urgent", submission.IsUrgent));
 
         SupportComposerTextBox.Clear();
-        UpdateSupportSummary();
-        RefreshActivityGrid();
-        ScrollSupportTranscriptToEnd();
+        await LoadSupportDataAsync();
+        saveTiming.Checkpoint("dashboard-refreshed", ("submissions", supportSubmissions.Count));
 
-        var statusBrush = automatedReply.IsUrgent ? SupportUrgentBrush : SupportSuccessBrush;
-        SetSupportStatus($"Reply queued in {automatedReply.Channel} support.", statusBrush);
+        var statusBrush = submission.IsUrgent ? SupportUrgentBrush : SupportSuccessBrush;
+        SetSupportStatus($"Support request submitted to the master inbox in {submission.Channel}.", statusBrush);
     }
 
     private void ClearSupportMessage_Click(object sender, RoutedEventArgs e)
@@ -349,18 +476,32 @@ public partial class Window2 : Window
         SetSupportStatus("Quick prompt loaded into the support composer.", SupportNeutralBrush);
     }
 
-    private void SaveContact_Click(object sender, RoutedEventArgs e)
+    private void SupportSubmissionsGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (SupportSubmissionsGrid.SelectedItem is SupportSubmissionRecord selectedSubmission)
+        {
+            ApplySelectedSupportSubmission(selectedSubmission);
+            return;
+        }
+
+        ApplySelectedSupportSubmission(supportSubmissions.FirstOrDefault());
+    }
+
+    private async void SaveContact_Click(object sender, RoutedEventArgs e)
     {
         var isEditing = !string.IsNullOrWhiteSpace(editingContactId);
+        using var saveTiming = PerformanceInstrumentation.Measure("workspace.save-contact", ("user", currentUser.Username), ("editing", isEditing));
         if (!TryBuildContact(out var contact, out var errorMessage))
         {
+            saveTiming.Checkpoint("validation-failed", ("reason", errorMessage));
             SetContactStatus(errorMessage, SupportErrorBrush);
             ContactNameBox.Focus();
             return;
         }
 
         UpsertContact(contact);
-        PersistWorkspaceData();
+        await PersistWorkspaceDataAsync();
+        saveTiming.Checkpoint("workspace-persisted", ("contacts", contacts.Count), ("contracts", contracts.Count));
         ResetContactEditor(false);
         SetContactStatus(
             isEditing
@@ -392,18 +533,21 @@ public partial class Window2 : Window
         SetContactStatus($"Editing {selectedContact.FullName}. Save to update the local store.", SupportNeutralBrush);
     }
 
-    private void SaveContract_Click(object sender, RoutedEventArgs e)
+    private async void SaveContract_Click(object sender, RoutedEventArgs e)
     {
         var isEditing = !string.IsNullOrWhiteSpace(editingContractId);
+        using var saveTiming = PerformanceInstrumentation.Measure("workspace.save-contract", ("user", currentUser.Username), ("editing", isEditing));
         if (!TryBuildContract(out var contract, out var errorMessage))
         {
+            saveTiming.Checkpoint("validation-failed", ("reason", errorMessage));
             SetContractStatus(errorMessage, SupportErrorBrush);
             ContractTitleBox.Focus();
             return;
         }
 
         UpsertContract(contract);
-        PersistWorkspaceData();
+        await PersistWorkspaceDataAsync();
+        saveTiming.Checkpoint("workspace-persisted", ("contacts", contacts.Count), ("contracts", contracts.Count));
         ResetContractEditor(false);
         SetContractStatus(
             isEditing
@@ -549,10 +693,13 @@ public partial class Window2 : Window
         errorMessage = string.Empty;
         return true;
     }
-    private void PersistWorkspaceData()
+    private async Task PersistWorkspaceDataAsync()
     {
-        workspaceRepository.SaveForUser(currentUser.Username, contacts, contracts);
-        LoadWorkspaceData();
+        using var persistTiming = PerformanceInstrumentation.Measure("workspace.persist", ("user", currentUser.Username), ("contacts", contacts.Count), ("contracts", contracts.Count));
+        await workspaceRepository.SaveForUserAsync(currentUser.Username, contacts.ToList(), contracts.ToList());
+        persistTiming.Checkpoint("store-saved");
+        await LoadWorkspaceDataAsync();
+        persistTiming.Checkpoint("workspace-reloaded", ("calendarItems", calendarItems.Count));
     }
 
     private void UpsertContact(ContactRecord contact)
@@ -620,9 +767,10 @@ public partial class Window2 : Window
         }
     }
 
-    private void SyncWorkspaceCalendarEvents()
+    private async Task SyncWorkspaceCalendarEventsAsync()
     {
-        var existingManagedEvents = calendarRepository.GetEvents()
+        using var syncTiming = PerformanceInstrumentation.Measure("workspace.calendar-sync", ("user", currentUser.Username));
+        var existingManagedEvents = (await calendarRepository.GetEventsAsync())
             .Where(item => item.Id.StartsWith(ManagedCalendarEventPrefix, StringComparison.OrdinalIgnoreCase))
             .ToDictionary(item => item.Id, StringComparer.OrdinalIgnoreCase);
 
@@ -679,19 +827,24 @@ public partial class Window2 : Window
             }
         }
 
-        if (desiredEvents.Count > 0)
-        {
-            calendarRepository.SaveMany(desiredEvents);
-        }
-
         var desiredIds = desiredEvents
             .Select(item => item.Id)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var staleIds = existingManagedEvents.Keys.Where(id => !desiredIds.Contains(id)).ToList();
+        syncTiming.Checkpoint("events-shaped", ("existing", existingManagedEvents.Count), ("desired", desiredEvents.Count), ("stale", staleIds.Count));
 
-        foreach (var staleId in existingManagedEvents.Keys.Where(id => !desiredIds.Contains(id)).ToList())
+        if (desiredEvents.Count > 0)
         {
-            calendarRepository.Delete(staleId);
+            await calendarRepository.SaveManyAsync(desiredEvents);
+            syncTiming.Checkpoint("events-saved", ("saved", desiredEvents.Count));
         }
+
+        if (staleIds.Count > 0)
+        {
+            await calendarRepository.DeleteManyAsync(staleIds);
+        }
+
+        syncTiming.Checkpoint("stale-events-removed", ("removed", staleIds.Count));
     }
 
     private static CalendarEventRecord CreateManagedEvent(
@@ -854,11 +1007,6 @@ public partial class Window2 : Window
         }
     }
 
-    private void SaveSupportConversation()
-    {
-        supportConversationRepository.SaveConversation(currentUser, supportMessages);
-    }
-
     private void SetSupportStatus(string message, Brush brush)
     {
         SupportStatusText.Text = message;
@@ -875,11 +1023,6 @@ public partial class Window2 : Window
     {
         ContractStatusText.Text = message;
         ContractStatusText.Foreground = brush;
-    }
-
-    private void ScrollSupportTranscriptToEnd()
-    {
-        Dispatcher.BeginInvoke(() => SupportTranscriptScrollViewer.ScrollToEnd(), DispatcherPriority.Background);
     }
 
     private void FocusSection(FrameworkElement section)
@@ -901,10 +1044,46 @@ public partial class Window2 : Window
         Close();
     }
 
+    private Task RefreshCalendarViewsAsync()
+        => RefreshCalendarViewsCoreAsync();
+
+    private async Task RefreshCalendarViewsCoreAsync()
+    {
+        await RefreshCalendarGridAsync();
+        await RefreshActivityGridAsync();
+    }
+
+    private void CalendarRepository_EventsChanged(object? sender, EventArgs e)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            _ = Dispatcher.InvokeAsync(() => _ = RefreshCalendarViewsAsync());
+            return;
+        }
+
+        _ = RefreshCalendarViewsAsync();
+    }
+
     protected override void OnClosed(EventArgs e)
     {
+        calendarRepository.EventsChanged -= CalendarRepository_EventsChanged;
         clockTimer.Stop();
         base.OnClosed(e);
+    }
+
+    private void OpenContractsWorkspace()
+    {
+        OpenModule(ModuleWindowState.CreateContracts(contracts));
+    }
+
+    private void OpenContactsWorkspace()
+    {
+        OpenModule(ModuleWindowState.CreateContacts(contacts));
+    }
+
+    private void OpenSupportWorkspace()
+    {
+        OpenModule(ModuleWindowState.CreateSupport(currentUser, supportSubmissions));
     }
 
     private void OpenCalendarWorkspace()
@@ -926,3 +1105,28 @@ public partial class Window2 : Window
 
 public sealed record PaymentRow(string Date, string Amount, string Method, string Status);
 public sealed record ActivityRow(string Workspace, string Action, string Owner, string Status);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

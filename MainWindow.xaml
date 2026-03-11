@@ -2,6 +2,7 @@
                   xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                   xmlns:local="clr-namespace:Label_CRM_demo"
+                  xmlns:po="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options"
                   Title="Titan Login"
                   Width="1180"
                   Height="760"
@@ -19,7 +20,7 @@
                   SnapsToDevicePixels="True">
     <Grid x:Name="ShellRoot">
         <Grid.Background>
-            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1" po:Freeze="True">
                 <GradientStop Color="#050816" Offset="0.0"/>
                 <GradientStop Color="#0B1020" Offset="0.45"/>
                 <GradientStop Color="#18284B" Offset="1.0"/>
@@ -27,35 +28,35 @@
         </Grid.Background>
 
         <Canvas IsHitTestVisible="False">
-            <Ellipse Width="520" Height="520" Opacity="0.22">
-                <Ellipse.Fill>
-                    <RadialGradientBrush>
+            <Border Width="620" Height="240" CornerRadius="52" Opacity="0.18">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5" po:Freeze="True">
                         <GradientStop Color="#70E1D1" Offset="0.0"/>
                         <GradientStop Color="#0070E1D1" Offset="1.0"/>
-                    </RadialGradientBrush>
-                </Ellipse.Fill>
-                <Ellipse.Effect>
-                    <BlurEffect Radius="150"/>
-                </Ellipse.Effect>
-                <Ellipse.RenderTransform>
-                    <TranslateTransform X="-140" Y="180"/>
-                </Ellipse.RenderTransform>
-            </Ellipse>
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Border.Effect>
+                    <BlurEffect Radius="150" po:Freeze="True"/>
+                </Border.Effect>
+                <Border.RenderTransform>
+                    <TranslateTransform X="-190" Y="230"/>
+                </Border.RenderTransform>
+            </Border>
 
-            <Ellipse Width="420" Height="420" Opacity="0.18">
-                <Ellipse.Fill>
-                    <RadialGradientBrush>
+            <Border Width="500" Height="210" CornerRadius="46" Opacity="0.16">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5" po:Freeze="True">
                         <GradientStop Color="#F59E0B" Offset="0.0"/>
                         <GradientStop Color="#00F59E0B" Offset="1.0"/>
-                    </RadialGradientBrush>
-                </Ellipse.Fill>
-                <Ellipse.Effect>
-                    <BlurEffect Radius="120"/>
-                </Ellipse.Effect>
-                <Ellipse.RenderTransform>
-                    <TranslateTransform X="980" Y="10"/>
-                </Ellipse.RenderTransform>
-            </Ellipse>
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Border.Effect>
+                    <BlurEffect Radius="120" po:Freeze="True"/>
+                </Border.Effect>
+                <Border.RenderTransform>
+                    <TranslateTransform X="960" Y="40"/>
+                </Border.RenderTransform>
+            </Border>
         </Canvas>
 
         <Grid Margin="24">
@@ -69,7 +70,7 @@
                         BorderBrush="#263B4D"
                         BorderThickness="1">
                     <Border.Effect>
-                        <DropShadowEffect BlurRadius="42" ShadowDepth="0" Color="#AA000000" Opacity="0.32"/>
+                        <DropShadowEffect BlurRadius="42" ShadowDepth="0" Color="#AA000000" Opacity="0.32" po:Freeze="True"/>
                     </Border.Effect>
 
                     <Grid>
@@ -140,12 +141,12 @@
                                 <StackPanel x:Name="HeroPanel" VerticalAlignment="Center">
                                     <Grid x:Name="LogoMark" Width="172" Height="172" Margin="0,0,0,22" HorizontalAlignment="Left">
                                         <Grid.Effect>
-                                            <DropShadowEffect BlurRadius="36" ShadowDepth="0" Color="#AA000000" Opacity="0.55"/>
+                                            <DropShadowEffect BlurRadius="36" ShadowDepth="0" Color="#AA000000" Opacity="0.55" po:Freeze="True"/>
                                         </Grid.Effect>
 
                                         <Border CornerRadius="44" BorderBrush="#FFD57A" BorderThickness="1.2">
                                             <Border.Background>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1" po:Freeze="True">
                                                     <GradientStop Color="#F3C76A" Offset="0.0"/>
                                                     <GradientStop Color="#E98A38" Offset="1.0"/>
                                                 </LinearGradientBrush>
@@ -153,13 +154,31 @@
                                         </Border>
 
                                         <Border Margin="8" CornerRadius="36" Background="#0E1B27" BorderBrush="#335166" BorderThickness="1"/>
-                                        <Ellipse Width="124" Height="124" Stroke="#55FFFFFF" StrokeThickness="2" Opacity="0.45"/>
+                                        <Border Width="122"
+                                                Height="122"
+                                                CornerRadius="26"
+                                                BorderBrush="#55FFFFFF"
+                                                BorderThickness="2"
+                                                Opacity="0.4"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"/>
 
                                         <Canvas Width="172" Height="172">
                                             <Path Fill="#70E1D1" Data="M30,55 L86,24 L142,55 L86,86 Z"/>
                                             <Rectangle Width="20" Height="66" RadiusX="8" RadiusY="8" Fill="#F7FBFD" Canvas.Left="76" Canvas.Top="46"/>
                                             <Path Fill="#F7C86D" Data="M42,114 L86,90 L130,114 L86,138 Z"/>
-                                            <Ellipse Width="16" Height="16" Fill="#F7FBFD" Canvas.Left="110" Canvas.Top="34"/>
+                                            <Rectangle Width="14"
+                                                       Height="14"
+                                                       RadiusX="4"
+                                                       RadiusY="4"
+                                                       Fill="#F7FBFD"
+                                                       Canvas.Left="112"
+                                                       Canvas.Top="36"
+                                                       RenderTransformOrigin="0.5,0.5">
+                                                <Rectangle.RenderTransform>
+                                                    <RotateTransform Angle="45"/>
+                                                </Rectangle.RenderTransform>
+                                            </Rectangle>
                                         </Canvas>
                                     </Grid>
 
@@ -217,24 +236,25 @@
                                             </Grid.ColumnDefinitions>
 
                                             <StackPanel x:Name="ChangesPanel" Grid.Row="0" Grid.Column="0" Margin="0,0,12,0">
-                                                <DockPanel LastChildFill="False">
+                                                <StackPanel>
                                                     <TextBlock Text="Platform updates"
                                                                Foreground="#F8FAFC"
                                                                FontWeight="SemiBold"
                                                                FontSize="15"/>
-                                                    <Border DockPanel.Dock="Right"
+                                                    <Border Margin="0,10,0,0"
+                                                            HorizontalAlignment="Left"
                                                             Padding="10,4"
                                                             Background="#15334450"
                                                             BorderBrush="#3D6478"
                                                             BorderThickness="1"
-                                                            CornerRadius="999">
+                                                            CornerRadius="10">
                                                         <TextBlock Text="Version history"
                                                                    Foreground="#DCE7EE"
                                                                    FontSize="11.5"
                                                                    FontWeight="SemiBold"/>
                                                     </Border>
-                                                </DockPanel>
-                                                <TextBlock Margin="0,10,0,0"
+                                                </StackPanel>
+                                                <TextBlock Margin="0,12,0,0"
                                                            Text="Add a new entry to Assets/LoginReleaseNotes.json and older release notes will stay visible here."
                                                            Foreground="#7DD7CB"
                                                            FontSize="12.5"
@@ -249,7 +269,8 @@
                                                     <ScrollViewer MaxHeight="286"
                                                                   VerticalScrollBarVisibility="Auto"
                                                                   HorizontalScrollBarVisibility="Disabled"
-                                                                  CanContentScroll="False">
+                                                                  CanContentScroll="False"
+                                                                  local:WheelScrollAssist.IsEnabled="True">
                                                         <ItemsControl x:Name="ReleaseNotesItemsControl">
                                                             <ItemsControl.ItemTemplate>
                                                                 <DataTemplate>
@@ -260,10 +281,21 @@
                                                                             BorderThickness="1"
                                                                             CornerRadius="16">
                                                                         <StackPanel>
-                                                                            <DockPanel Margin="0,0,0,4">
-                                                                                <Border DockPanel.Dock="Right"
+                                                                            <StackPanel Margin="0,0,0,4">
+                                                                                <TextBlock Text="{Binding Version}"
+                                                                                           Foreground="#F0B862"
+                                                                                           FontWeight="Bold"
+                                                                                           FontSize="13"/>
+                                                                                <TextBlock Text="{Binding Title}"
+                                                                                           Margin="0,4,0,0"
+                                                                                           Foreground="#F8FAFC"
+                                                                                           FontWeight="SemiBold"
+                                                                                           FontSize="15"
+                                                                                           TextWrapping="Wrap"/>
+                                                                                <Border Margin="0,10,0,0"
                                                                                         Padding="10,4"
-                                                                                        CornerRadius="999"
+                                                                                        HorizontalAlignment="Left"
+                                                                                        CornerRadius="10"
                                                                                         Background="#18384A"
                                                                                         BorderBrush="#3F6478"
                                                                                         BorderThickness="1">
@@ -272,19 +304,7 @@
                                                                                                FontSize="11.5"
                                                                                                FontWeight="SemiBold"/>
                                                                                 </Border>
-                                                                                <StackPanel Margin="0,0,12,0">
-                                                                                    <TextBlock Text="{Binding Version}"
-                                                                                               Foreground="#F0B862"
-                                                                                               FontWeight="Bold"
-                                                                                               FontSize="13"/>
-                                                                                    <TextBlock Text="{Binding Title}"
-                                                                                               Margin="0,4,0,0"
-                                                                                               Foreground="#F8FAFC"
-                                                                                               FontWeight="SemiBold"
-                                                                                               FontSize="15"
-                                                                                               TextWrapping="Wrap"/>
-                                                                                </StackPanel>
-                                                                            </DockPanel>
+                                                                            </StackPanel>
                                                                             <TextBlock Text="{Binding Summary}"
                                                                                        Margin="0,6,0,0"
                                                                                        Foreground="#9FB5C1"
@@ -639,15 +659,21 @@
                         Opacity="0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center">
+                    <Border.CacheMode>
+                        <BitmapCache/>
+                    </Border.CacheMode>
                     <StackPanel HorizontalAlignment="Center">
                         <Grid x:Name="StartupLogo" Width="128" Height="128" Margin="0,0,0,18" HorizontalAlignment="Center">
+                            <Grid.CacheMode>
+                                <BitmapCache/>
+                            </Grid.CacheMode>
                             <Grid.Effect>
-                                <DropShadowEffect BlurRadius="34" ShadowDepth="0" Color="#AA000000" Opacity="0.55"/>
+                                <DropShadowEffect BlurRadius="34" ShadowDepth="0" Color="#AA000000" Opacity="0.55" po:Freeze="True"/>
                             </Grid.Effect>
 
                             <Border CornerRadius="34" BorderBrush="#FFD57A" BorderThickness="1.2">
                                 <Border.Background>
-                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1" po:Freeze="True">
                                         <GradientStop Color="#F3C76A" Offset="0.0"/>
                                         <GradientStop Color="#E98A38" Offset="1.0"/>
                                     </LinearGradientBrush>
@@ -655,13 +681,31 @@
                             </Border>
 
                             <Border Margin="6" CornerRadius="28" Background="#0E1B27" BorderBrush="#335166" BorderThickness="1"/>
-                            <Ellipse Width="92" Height="92" Stroke="#55FFFFFF" StrokeThickness="2" Opacity="0.45"/>
+                            <Border Width="92"
+                                    Height="92"
+                                    CornerRadius="22"
+                                    BorderBrush="#55FFFFFF"
+                                    BorderThickness="2"
+                                    Opacity="0.4"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"/>
 
                             <Canvas Width="128" Height="128">
                                 <Path Fill="#70E1D1" Data="M23,41 L64,18 L105,41 L64,64 Z"/>
                                 <Rectangle Width="16" Height="50" RadiusX="7" RadiusY="7" Fill="#F7FBFD" Canvas.Left="56" Canvas.Top="35"/>
                                 <Path Fill="#F7C86D" Data="M31,89 L64,71 L97,89 L64,108 Z"/>
-                                <Ellipse Width="14" Height="14" Fill="#F7FBFD" Canvas.Left="82" Canvas.Top="26"/>
+                                <Rectangle Width="12"
+                                           Height="12"
+                                           RadiusX="4"
+                                           RadiusY="4"
+                                           Fill="#F7FBFD"
+                                           Canvas.Left="83"
+                                           Canvas.Top="27"
+                                           RenderTransformOrigin="0.5,0.5">
+                                    <Rectangle.RenderTransform>
+                                        <RotateTransform Angle="45"/>
+                                    </Rectangle.RenderTransform>
+                                </Rectangle>
                             </Canvas>
                         </Grid>
 
@@ -704,7 +748,4 @@
         </Grid>
     </Grid>
 </local:SnapWindow>
-
-
-
 

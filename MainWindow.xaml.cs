@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -20,7 +21,14 @@ public partial class MainWindow : SnapWindow
     private static readonly Brush InactiveTabForeground = CreateBrush("#CBD5E1");
     private readonly CredentialRepository credentials;
     private readonly ReleaseNotesRepository releaseNotesRepository;
+    private bool hasInitializedInteractiveStates;
+    private bool hasQueuedDeferredContent;
+    private bool hasResponsiveLayoutState;
+    private bool hasStartedStartupSequence;
     private bool isSignUpMode;
+    private bool isAuthBusy;
+    private bool lastCompactLayout;
+    private bool lastShortLayout;
 
     public MainWindow()
         : this(App.Credentials)
@@ -29,38 +37,44 @@ public partial class MainWindow : SnapWindow
 
     internal MainWindow(CredentialRepository credentials)
     {
+        using var initTiming = PerformanceInstrumentation.Measure("startup.login-window-init");
         this.credentials = credentials;
         releaseNotesRepository = new ReleaseNotesRepository();
         OpenDurationMs = 460;
         StartScale = 0.82;
         StartOffsetY = 48;
         InitializeComponent();
-        InitializeInteractiveStates();
-
-        ReleaseNotesItemsControl.ItemsSource = releaseNotesRepository.Load();
         StoragePathText.Text = credentials.StoragePath;
         StatusText.Text = string.Empty;
         SignUpStatusText.Text = string.Empty;
         SetAuthMode(false);
+        initTiming.Checkpoint("shell-ready");
 
-        SizeChanged += (_, _) => UpdateResponsiveLayout();
-        StateChanged += (_, _) => EnsureFullscreenLock();
-        Loaded += (_, _) =>
-        {
-            EnsureFullscreenLock();
-            UpdateResponsiveLayout();
-            BeginStartupSequence();
-        };
-
-        EnsureFullscreenLock();
-        UpdateResponsiveLayout();
+        SizeChanged += OnWindowSizeChanged;
+        StateChanged += OnWindowStateChanged;
+        Loaded += OnWindowLoaded;
+        ContentRendered += OnWindowContentRendered;
     }
 
     private static SolidColorBrush CreateBrush(string hex)
-        => (SolidColorBrush)new BrushConverter().ConvertFromString(hex)!;
+    {
+        var brush = (SolidColorBrush)new BrushConverter().ConvertFromString(hex)!;
+        if (brush.CanFreeze)
+        {
+            brush.Freeze();
+        }
+
+        return brush;
+    }
 
     private void InitializeInteractiveStates()
     {
+        if (hasInitializedInteractiveStates)
+        {
+            return;
+        }
+
+        hasInitializedInteractiveStates = true;
         UiAnimator.AttachHoverLift(new FrameworkElement[]
         {
             NotesCard,
@@ -68,6 +82,62 @@ public partial class MainWindow : SnapWindow
             SignInTabButton,
             SignUpTabButton
         }, -5, 1.008);
+    }
+
+    private void OnWindowLoaded(object sender, RoutedEventArgs e)
+    {
+        PerformanceInstrumentation.Log("startup.login-window-loaded");
+        EnsureFullscreenLock();
+        UpdateResponsiveLayout(force: true);
+    }
+
+    private void OnWindowContentRendered(object? sender, EventArgs e)
+    {
+        if (hasStartedStartupSequence)
+        {
+            return;
+        }
+
+        hasStartedStartupSequence = true;
+        InitializeInteractiveStates();
+        QueueDeferredContentLoad();
+        BeginStartupSequence();
+    }
+
+    private void OnWindowSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (!IsLoaded)
+        {
+            return;
+        }
+
+        UpdateResponsiveLayout();
+    }
+
+    private void OnWindowStateChanged(object? sender, EventArgs e)
+    {
+        EnsureFullscreenLock();
+
+        if (!IsLoaded)
+        {
+            return;
+        }
+
+        UpdateResponsiveLayout();
+    }
+
+    private async void QueueDeferredContentLoad()
+    {
+        if (hasQueuedDeferredContent)
+        {
+            return;
+        }
+
+        hasQueuedDeferredContent = true;
+        var releaseNotes = await Task.Run(releaseNotesRepository.Load);
+
+        ReleaseNotesItemsControl.ItemsSource = releaseNotes;
+        PerformanceInstrumentation.Log("startup.login-window-content-bound", ("releaseNotes", releaseNotes.Count));
     }
 
     private void BeginStartupSequence()
@@ -94,6 +164,7 @@ public partial class MainWindow : SnapWindow
         overlayFade.Completed += (_, _) =>
         {
             StartupOverlay.Visibility = Visibility.Collapsed;
+            PerformanceInstrumentation.Log("startup.login-ready");
             UiAnimator.PlayLogoReveal(LogoMark);
             UiAnimator.PlayEntrance(new FrameworkElement[]
             {
@@ -115,7 +186,7 @@ public partial class MainWindow : SnapWindow
         }
     }
 
-    private void UpdateResponsiveLayout()
+    private void UpdateResponsiveLayout(bool force = false)
     {
         var viewportWidth = ShellScrollViewer.ViewportWidth;
         if (viewportWidth <= 0)
@@ -130,6 +201,17 @@ public partial class MainWindow : SnapWindow
 
         var isCompactLayout = viewportWidth < CompactLayoutBreakpoint;
         var isShortLayout = ActualHeight > 0 && ActualHeight < ShortHeightBreakpoint;
+        if (!force
+            && hasResponsiveLayoutState
+            && isCompactLayout == lastCompactLayout
+            && isShortLayout == lastShortLayout)
+        {
+            return;
+        }
+
+        hasResponsiveLayoutState = true;
+        lastCompactLayout = isCompactLayout;
+        lastShortLayout = isShortLayout;
 
         ContentBottomRow.Height = isCompactLayout ? GridLength.Auto : new GridLength(0);
         HeroColumn.Width = isCompactLayout ? new GridLength(1, GridUnitType.Star) : new GridLength(1.18, GridUnitType.Star);
@@ -196,8 +278,8 @@ public partial class MainWindow : SnapWindow
         AuthBadgeText.Text = signUpMode ? "Encrypted local account setup" : "Encrypted local access";
         AuthTitleText.Text = signUpMode ? "Create Test Account" : "Open Workspace";
         AuthDescriptionText.Text = signUpMode
-            ? "Capture first name, last name, phone, email, and password in the same protected local store while you validate the flow before SQL is wired in."
-            : "Sign in with your local account to open the Titan dashboard and launch focused workspace windows without losing your place.";
+            ? "Capture first name, last name, phone, email, and password in the same protected local store while you validate the flow before SQL is wired in. New signups are created as User tier accounts by default."
+            : "Sign in with your local account to open the Titan dashboard, launch focused workspace windows, and use the role-based support experience without losing your place.";
 
         StatusText.Text = string.Empty;
         SignUpStatusText.Text = string.Empty;
@@ -219,23 +301,43 @@ public partial class MainWindow : SnapWindow
         UsernameBox.Focus();
     }
 
-    private void Submit_Click(object sender, RoutedEventArgs e)
+    private async void Submit_Click(object sender, RoutedEventArgs e)
     {
-        if (!credentials.TryAuthenticate(UsernameBox.Text, PasswordBox.Password, out AuthenticatedUser? user) || user is null)
+        if (isAuthBusy)
         {
-            StatusText.Text = "Incorrect email, username, or password.";
-            PasswordBox.Clear();
-            PasswordBox.Focus();
-            UiAnimator.Shake(LoginCard);
             return;
         }
 
-        StatusText.Text = string.Empty;
-        OpenDashboard(user);
+        isAuthBusy = true;
+
+        try
+        {
+            var user = await credentials.AuthenticateAsync(UsernameBox.Text, PasswordBox.Password);
+            if (user is null)
+            {
+                StatusText.Text = "Incorrect email, username, or password.";
+                PasswordBox.Clear();
+                PasswordBox.Focus();
+                UiAnimator.Shake(LoginCard);
+                return;
+            }
+
+            StatusText.Text = string.Empty;
+            OpenDashboard(user);
+        }
+        finally
+        {
+            isAuthBusy = false;
+        }
     }
 
-    private void CreateAccount_Click(object sender, RoutedEventArgs e)
+    private async void CreateAccount_Click(object sender, RoutedEventArgs e)
     {
+        if (isAuthBusy)
+        {
+            return;
+        }
+
         StatusText.Text = string.Empty;
         SignUpStatusText.Text = string.Empty;
 
@@ -255,26 +357,50 @@ public partial class MainWindow : SnapWindow
             EmailBox.Text,
             SignUpPasswordBox.Password);
 
-        if (!credentials.TryRegister(request, out AuthenticatedUser? user, out string errorMessage) || user is null)
-        {
-            SignUpStatusText.Text = errorMessage;
-            SignUpPasswordBox.Clear();
-            ConfirmPasswordBox.Clear();
-            UiAnimator.Shake(LoginCard);
-            FocusActiveInput();
-            return;
-        }
+        isAuthBusy = true;
 
-        OpenDashboard(user);
+        try
+        {
+            var (user, errorMessage) = await credentials.RegisterAsync(request);
+            if (user is null)
+            {
+                SignUpStatusText.Text = errorMessage;
+                SignUpPasswordBox.Clear();
+                ConfirmPasswordBox.Clear();
+                UiAnimator.Shake(LoginCard);
+                FocusActiveInput();
+                return;
+            }
+
+            OpenDashboard(user);
+        }
+        finally
+        {
+            isAuthBusy = false;
+        }
     }
 
     private void OpenDashboard(AuthenticatedUser user)
     {
+        PerformanceInstrumentation.Log("navigation.dashboard-open-requested", ("user", user.Username), ("tier", user.TierLabel));
         var dashboard = new Window2(user);
+        var dashboardVisibleLogged = false;
+        dashboard.ContentRendered += (_, _) =>
+        {
+            if (dashboardVisibleLogged)
+            {
+                return;
+            }
+
+            dashboardVisibleLogged = true;
+            PerformanceInstrumentation.Log("dashboard.visible", ("user", user.Username), ("tier", user.TierLabel));
+        };
+
         Application.Current.MainWindow = dashboard;
         dashboard.Show();
         Close();
     }
 }
+
 
 

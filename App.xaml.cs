@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using System.Windows;
 using Label_CRM_demo.Services;
 
@@ -13,18 +14,26 @@ public partial class App : Application
     public static GoogleCalendarSyncService GoogleCalendar { get; } = new GoogleCalendarSyncService();
     public static AppleCalendarSyncService AppleCalendar { get; } = new AppleCalendarSyncService();
 
-    protected override void OnStartup(StartupEventArgs e)
+    protected override async void OnStartup(StartupEventArgs e)
     {
+        using var startupTiming = PerformanceInstrumentation.Measure("startup.app");
         base.OnStartup(e);
+        startupTiming.Checkpoint("wpf-ready");
 
         try
         {
-            Credentials.EnsureSeeded();
-            WorkspaceData.EnsureInitialized();
-            CalendarEvents.EnsureSeeded();
+            using var storesTiming = PerformanceInstrumentation.Measure("startup.initialize-stores");
+            await Task.WhenAll(
+                Credentials.EnsureSeededAsync(),
+                WorkspaceData.EnsureInitializedAsync(),
+                CalendarEvents.EnsureSeededAsync());
+            storesTiming.Checkpoint("credentials-ready");
+            storesTiming.Checkpoint("workspace-ready");
+            storesTiming.Checkpoint("calendar-ready");
         }
         catch (Exception ex)
         {
+            PerformanceInstrumentation.Log("startup.initialization-failed", ("errorType", ex.GetType().Name));
             MessageBox.Show(
                 "The local application stores could not be initialized.\n\n" + ex.Message,
                 "Startup Error",
@@ -36,7 +45,22 @@ public partial class App : Application
         }
 
         var loginWindow = new MainWindow(Credentials);
+        startupTiming.Checkpoint("login-window-constructed");
         MainWindow = loginWindow;
+
+        var loginWindowVisibleLogged = false;
+        loginWindow.ContentRendered += (_, _) =>
+        {
+            if (loginWindowVisibleLogged)
+            {
+                return;
+            }
+
+            loginWindowVisibleLogged = true;
+            PerformanceInstrumentation.Log("startup.login-window-visible");
+        };
+
         loginWindow.Show();
+        startupTiming.Checkpoint("login-window-show-called");
     }
 }

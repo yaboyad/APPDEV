@@ -16,102 +16,59 @@
             <GradientStop Color="#0B1A26" Offset="0.5"/>
             <GradientStop Color="#163445" Offset="1.0"/>
         </LinearGradientBrush>
-
-        <Style x:Key="ModuleCard" TargetType="Border">
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#D9172531" Offset="0.0"/>
-                        <GradientStop Color="#C90E1821" Offset="1.0"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
-            <Setter Property="BorderBrush" Value="#294960"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="22"/>
-            <Setter Property="Padding" Value="22"/>
-            <Setter Property="Effect">
-                <Setter.Value>
-                    <DropShadowEffect BlurRadius="28" ShadowDepth="0" Color="#77000000" Opacity="0.32"/>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style TargetType="DataGrid">
-            <Setter Property="Background" Value="#00000000"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="AutoGenerateColumns" Value="False"/>
-            <Setter Property="HeadersVisibility" Value="Column"/>
-            <Setter Property="GridLinesVisibility" Value="None"/>
-            <Setter Property="CanUserAddRows" Value="False"/>
-            <Setter Property="IsReadOnly" Value="True"/>
-            <Setter Property="AlternationCount" Value="2"/>
-            <Setter Property="RowBackground" Value="#11000000"/>
-            <Setter Property="AlternatingRowBackground" Value="#16000000"/>
-            <Setter Property="Foreground" Value="#F3F9FC"/>
-        </Style>
-
-        <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#172734"/>
-            <Setter Property="Foreground" Value="#9FB5C1"/>
-            <Setter Property="BorderThickness" Value="0,0,0,1"/>
-            <Setter Property="BorderBrush" Value="#294960"/>
-            <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-        </Style>
     </local:SnapWindow.Resources>
 
     <Grid Background="{StaticResource ModuleBackground}">
         <Canvas IsHitTestVisible="False">
-            <Ellipse Width="320" Height="320" Opacity="0.22">
-                <Ellipse.Fill>
-                    <RadialGradientBrush>
+            <Border Width="380" Height="180" CornerRadius="42" Opacity="0.2">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
                         <GradientStop Color="#4FD1C5" Offset="0.0"/>
                         <GradientStop Color="#004FD1C5" Offset="1.0"/>
-                    </RadialGradientBrush>
-                </Ellipse.Fill>
-                <Ellipse.Effect>
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Border.Effect>
                     <BlurEffect Radius="100"/>
-                </Ellipse.Effect>
-                <Ellipse.RenderTransform>
-                    <TranslateTransform X="-60" Y="20"/>
-                </Ellipse.RenderTransform>
-                <Ellipse.Triggers>
+                </Border.Effect>
+                <Border.RenderTransform>
+                    <TranslateTransform X="-90" Y="70"/>
+                </Border.RenderTransform>
+                <Border.Triggers>
                     <EventTrigger RoutedEvent="Loaded">
                         <BeginStoryboard>
                             <Storyboard RepeatBehavior="Forever" AutoReverse="True">
-                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" From="-60" To="40" Duration="0:0:9"/>
-                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="20" To="120" Duration="0:0:8"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" From="-90" To="30" Duration="0:0:9"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="70" To="140" Duration="0:0:8"/>
                             </Storyboard>
                         </BeginStoryboard>
                     </EventTrigger>
-                </Ellipse.Triggers>
-            </Ellipse>
+                </Border.Triggers>
+            </Border>
 
-            <Ellipse Width="260" Height="260" Opacity="0.18">
-                <Ellipse.Fill>
-                    <RadialGradientBrush>
+            <Border Width="320" Height="160" CornerRadius="36" Opacity="0.17">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
                         <GradientStop Color="#F59E0B" Offset="0.0"/>
                         <GradientStop Color="#00F59E0B" Offset="1.0"/>
-                    </RadialGradientBrush>
-                </Ellipse.Fill>
-                <Ellipse.Effect>
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Border.Effect>
                     <BlurEffect Radius="90"/>
-                </Ellipse.Effect>
-                <Ellipse.RenderTransform>
-                    <TranslateTransform X="820" Y="420"/>
-                </Ellipse.RenderTransform>
-                <Ellipse.Triggers>
+                </Border.Effect>
+                <Border.RenderTransform>
+                    <TranslateTransform X="780" Y="450"/>
+                </Border.RenderTransform>
+                <Border.Triggers>
                     <EventTrigger RoutedEvent="Loaded">
                         <BeginStoryboard>
                             <Storyboard RepeatBehavior="Forever" AutoReverse="True">
-                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" From="820" To="760" Duration="0:0:10"/>
-                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="420" To="330" Duration="0:0:7"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" From="780" To="730" Duration="0:0:10"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="450" To="360" Duration="0:0:7"/>
                             </Storyboard>
                         </BeginStoryboard>
                     </EventTrigger>
-                </Ellipse.Triggers>
-            </Ellipse>
+                </Border.Triggers>
+            </Border>
         </Canvas>
 
         <Grid Margin="20">
@@ -225,7 +182,7 @@
                         <TextBlock Margin="0,8,0,14"
                                    Text="This view is ready to swap from demo rows to live local data whenever you are."
                                    Style="{StaticResource TitanMutedBodyTextStyle}"/>
-                        <DataGrid x:Name="RecordsGrid">
+                        <DataGrid x:Name="RecordsGrid" Style="{StaticResource TitanModuleDarkDataGridStyle}">
                             <DataGrid.Columns>
                                 <DataGridTextColumn x:Name="Column1" Binding="{Binding Column1}" Width="*"/>
                                 <DataGridTextColumn x:Name="Column2" Binding="{Binding Column2}" Width="*"/>
@@ -252,3 +209,4 @@
         </Grid>
     </Grid>
 </local:SnapWindow>
+
