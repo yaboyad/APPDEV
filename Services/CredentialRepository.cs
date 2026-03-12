@@ -67,23 +67,30 @@ public sealed class CredentialRepository
         string password,
         CancellationToken cancellationToken = default)
     {
+        var result = await AuthenticateWithStatusAsync(usernameOrEmail, password, cancellationToken).ConfigureAwait(false);
+        return result.User;
+    }
+
+    public async Task<(AuthenticatedUser? User, string ErrorMessage)> AuthenticateWithStatusAsync(
+        string usernameOrEmail,
+        string password,
+        CancellationToken cancellationToken = default)
+    {
         var identifier = NormalizeIdentifier(usernameOrEmail);
         if (string.IsNullOrWhiteSpace(identifier) || string.IsNullOrWhiteSpace(password))
         {
-            return null;
+            return (null, "Enter your email or username and password.");
         }
 
         await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var store = await LoadStoreCoreAsync(cancellationToken).ConfigureAwait(false);
-            var record = store.Users.FirstOrDefault(candidate =>
-                string.Equals(candidate.Username, identifier, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(candidate.Email, identifier, StringComparison.OrdinalIgnoreCase));
+            var record = FindStoredUser(store, identifier);
 
             if (record is null)
             {
-                return null;
+                return (null, "Incorrect email, username, or password.");
             }
 
             bool passwordVerified;
@@ -95,10 +102,82 @@ public sealed class CredentialRepository
             }
             catch
             {
-                return null;
+                return (null, "Incorrect email, username, or password.");
             }
 
-            return passwordVerified ? ToAuthenticatedUser(record) : null;
+            if (!passwordVerified)
+            {
+                return (null, "Incorrect email, username, or password.");
+            }
+
+            if (record.IsBanned)
+            {
+                return (null, "This account has been banned. Sign in with the master account to restore access.");
+            }
+
+            return (ToAuthenticatedUser(record), string.Empty);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    public async Task<IReadOnlyList<ManagedAccountRecord>> GetManagedAccountsAsync(CancellationToken cancellationToken = default)
+    {
+        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var store = await LoadStoreCoreAsync(cancellationToken).ConfigureAwait(false);
+            return store.Users
+                .OrderByDescending(user => AccountTiers.IsMaster(user.AccountTier))
+                .ThenBy(user => user.IsBanned)
+                .ThenBy(user => string.IsNullOrWhiteSpace(user.DisplayName) ? user.Username : user.DisplayName, StringComparer.CurrentCultureIgnoreCase)
+                .Select(ToManagedAccount)
+                .ToList();
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    public async Task<(bool Success, string ErrorMessage)> SetBanStateAsync(
+        string usernameOrEmail,
+        bool isBanned,
+        CancellationToken cancellationToken = default)
+    {
+        var identifier = NormalizeIdentifier(usernameOrEmail);
+        if (string.IsNullOrWhiteSpace(identifier))
+        {
+            return (false, "Select an account before changing access.");
+        }
+
+        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var store = await LoadStoreCoreAsync(cancellationToken).ConfigureAwait(false);
+            var record = FindStoredUser(store, identifier);
+            if (record is null)
+            {
+                return (false, "That account could not be found.");
+            }
+
+            if (AccountTiers.IsMaster(record.AccountTier) || IsMasterIdentity(record.Username, record.Email))
+            {
+                return (false, "Master accounts are protected and cannot be banned.");
+            }
+
+            if (record.IsBanned == isBanned)
+            {
+                return (true, isBanned
+                    ? "That account is already banned."
+                    : "That account already has access.");
+            }
+
+            record.IsBanned = isBanned;
+            await SaveStoreCoreAsync(store, cancellationToken).ConfigureAwait(false);
+            return (true, string.Empty);
         }
         finally
         {
@@ -300,6 +379,11 @@ public sealed class CredentialRepository
         isInitialized = true;
     }
 
+    private static StoredUser? FindStoredUser(CredentialStore store, string identifier)
+        => store.Users.FirstOrDefault(candidate =>
+            string.Equals(candidate.Username, identifier, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(candidate.Email, identifier, StringComparison.OrdinalIgnoreCase));
+
     private static StoredUser CreateStoredUser(
         string username,
         string firstName,
@@ -322,7 +406,8 @@ public sealed class CredentialRepository
             Email = NormalizeEmail(email),
             AccountTier = AccountTiers.Normalize(accountTier),
             PasswordSalt = salt,
-            PasswordHash = ComputeHash(password, salt)
+            PasswordHash = ComputeHash(password, salt),
+            IsBanned = false
         };
     }
 
@@ -355,7 +440,20 @@ public sealed class CredentialRepository
         record.LastName,
         record.PhoneNumber,
         record.Email,
-        AccountTiers.Normalize(record.AccountTier));
+        AccountTiers.Normalize(record.AccountTier),
+        record.IsBanned);
+
+    private static ManagedAccountRecord ToManagedAccount(StoredUser record) => new(
+        record.Username,
+        string.IsNullOrWhiteSpace(record.DisplayName)
+            ? BuildDisplayName(record.FirstName, record.LastName, record.Username)
+            : record.DisplayName,
+        record.FirstName,
+        record.LastName,
+        record.PhoneNumber,
+        record.Email,
+        AccountTiers.Normalize(record.AccountTier),
+        record.IsBanned);
 
     private static bool EnsureRequiredUsers(CredentialStore store)
     {
@@ -414,6 +512,8 @@ public sealed class CredentialRepository
 
         var user = store.Users[index];
         var changed = false;
+        var normalizedTier = AccountTiers.Normalize(accountTier);
+        var normalizedIsBanned = AccountTiers.IsMaster(normalizedTier) ? false : user.IsBanned;
 
         changed = SetValue(user.Username, NormalizeIdentifier(username), value => user.Username = value) || changed;
         changed = SetValue(user.FirstName, NormalizeName(firstName), value => user.FirstName = value) || changed;
@@ -421,7 +521,8 @@ public sealed class CredentialRepository
         changed = SetValue(user.PhoneNumber, NormalizePhoneNumber(phoneNumber), value => user.PhoneNumber = value) || changed;
         changed = SetValue(user.Email, NormalizeEmail(email), value => user.Email = value) || changed;
         changed = SetValue(user.DisplayName, BuildDisplayName(firstName, lastName, username), value => user.DisplayName = value) || changed;
-        changed = SetValue(user.AccountTier, AccountTiers.Normalize(accountTier), value => user.AccountTier = value) || changed;
+        changed = SetValue(user.AccountTier, normalizedTier, value => user.AccountTier = value) || changed;
+        changed = SetValue(user.IsBanned, normalizedIsBanned, value => user.IsBanned = value) || changed;
 
         if ((resetPassword && NeedsPasswordReset(user, password))
             || string.IsNullOrWhiteSpace(user.PasswordSalt)
@@ -448,6 +549,7 @@ public sealed class CredentialRepository
         var normalizedTier = IsMasterIdentity(normalizedUsername, normalizedEmail)
             ? AccountTiers.Master
             : AccountTiers.Normalize(user.AccountTier);
+        var normalizedIsBanned = AccountTiers.IsMaster(normalizedTier) ? false : user.IsBanned;
 
         changed = SetValue(user.Username, normalizedUsername, value => user.Username = value) || changed;
         changed = SetValue(user.FirstName, normalizedFirstName, value => user.FirstName = value) || changed;
@@ -456,13 +558,14 @@ public sealed class CredentialRepository
         changed = SetValue(user.Email, normalizedEmail, value => user.Email = value) || changed;
         changed = SetValue(user.DisplayName, normalizedDisplayName, value => user.DisplayName = value) || changed;
         changed = SetValue(user.AccountTier, normalizedTier, value => user.AccountTier = value) || changed;
+        changed = SetValue(user.IsBanned, normalizedIsBanned, value => user.IsBanned = value) || changed;
 
         return changed;
     }
 
-    private static bool SetValue(string currentValue, string value, Action<string> setter)
+    private static bool SetValue<T>(T currentValue, T value, Action<T> setter)
     {
-        if (string.Equals(currentValue, value, StringComparison.Ordinal))
+        if (EqualityComparer<T>.Default.Equals(currentValue, value))
         {
             return false;
         }
@@ -546,5 +649,6 @@ public sealed class CredentialRepository
         public string AccountTier { get; set; } = AccountTiers.User;
         public string PasswordHash { get; set; } = string.Empty;
         public string PasswordSalt { get; set; } = string.Empty;
+        public bool IsBanned { get; set; }
     }
 }

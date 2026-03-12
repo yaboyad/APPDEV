@@ -228,6 +228,49 @@ public sealed class ModuleWindowState
         }
     };
 
+    public static ModuleWindowState CreateDataWatch()
+    {
+        var sources = CreateDataWatchRows();
+        var readyCount = sources.Count(source => source.Status.StartsWith("Ready", StringComparison.OrdinalIgnoreCase));
+
+        return new ModuleWindowState
+        {
+            WindowKey = "data-watch",
+            Title = "Data Workspace",
+            Subtitle = "Track platform APIs and signal checks from one focused window",
+            Highlight = "Keep Instagram, YouTube, X, and the rest of the watchlist together so launch checks stay fast without cluttering the main dashboard.",
+            Footer = "Next step: connect the APIs you care about most and swap these staged rows for live pulls from your real sources.",
+            Column1Header = "API",
+            Column2Header = "Signals",
+            Column3Header = "Cadence",
+            Column4Header = "Status",
+            Metrics = new[]
+            {
+                new ModuleMetric("Sources", sources.Count.ToString(CultureInfo.InvariantCulture), "Instagram, YouTube, X, and more"),
+                new ModuleMetric("Ready", readyCount.ToString(CultureInfo.InvariantCulture), readyCount == sources.Count ? "Every source is staged" : "A few credentials still need setup"),
+                new ModuleMetric("Focus", "Audience + reach", "Momentum, mentions, and retention")
+            },
+            Rows = sources
+                .Select(source => new ModuleRow(
+                    source.Platform,
+                    $"{source.Audience} | {source.Reach}",
+                    source.LastUpdate,
+                    source.Status))
+                .ToArray()
+        };
+    }
+
+    public static IReadOnlyList<SocialPlatformRow> CreateDataWatchRows() => new[]
+    {
+        new SocialPlatformRow("Instagram Graph API", "Follower growth + saves", "Reels reach + profile taps", "15 min cadence", "Ready to connect"),
+        new SocialPlatformRow("YouTube Data API v3", "Subscribers + returning viewers", "Shorts lift + top video velocity", "30 min cadence", "Ready to connect"),
+        new SocialPlatformRow("X API v2", "Mentions + reposts", "Conversation spikes + link clicks", "15 min cadence", "Ready to connect"),
+        new SocialPlatformRow("TikTok Business API", "Follower growth + watch rate", "Video completion + shares", "Hourly review", "Credential check"),
+        new SocialPlatformRow("Spotify Web API", "Follower movement + catalog attention", "Top-track momentum", "Hourly review", "Ready to connect"),
+        new SocialPlatformRow("SoundCloud API", "Plays + reposts", "Comment bursts + likes", "Hourly review", "Credential check"),
+        new SocialPlatformRow("Bandsintown API", "Event follows + RSVPs", "City-by-city demand", "Daily sweep", "Ready to connect")
+    };
+
     public static ModuleWindowState CreateSupport(AuthenticatedUser user) => CreateSupport(user, null);
 
     public static ModuleWindowState CreateSupport(AuthenticatedUser user, IEnumerable<SupportSubmissionRecord>? submissions)
@@ -346,3 +389,4 @@ public sealed class ModuleWindowState
 public sealed record ModuleMetric(string Label, string Value, string Detail);
 
 public sealed record ModuleRow(string Column1, string Column2, string Column3, string Column4);
+

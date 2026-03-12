@@ -9,20 +9,163 @@
 
         <BitmapImage x:Key="TitanWindowIcon"
                      UriSource="pack://application:,,,/Assets/Titan.ico"
-                     po:Freeze="True"/>
+                     />
+        <Color x:Key="TitanTextPrimaryColor">#F6FBFD</Color>
+        <Color x:Key="TitanTextSecondaryColor">#C7D7E0</Color>
+        <Color x:Key="TitanTextMutedColor">#8EA8B7</Color>
+        <Color x:Key="TitanMetricLabelColor">#8FA9B7</Color>
+        <Color x:Key="TitanWindowFallbackColor">#07131F</Color>
+        <Color x:Key="TitanShellStartColor">#050816</Color>
+        <Color x:Key="TitanShellMidColor">#0B1020</Color>
+        <Color x:Key="TitanShellEndColor">#18374A</Color>
+        <Color x:Key="TitanGlassStartColor">#D9172531</Color>
+        <Color x:Key="TitanGlassEndColor">#C90E1821</Color>
+        <Color x:Key="TitanGlassBorderColor">#294960</Color>
+        <Color x:Key="TitanCardColor">#D9141F2A</Color>
+        <Color x:Key="TitanCardBorderColor">#2F5165</Color>
+        <Color x:Key="TitanPanelColor">#101A23</Color>
+        <Color x:Key="TitanPanelBorderColor">#315063</Color>
+        <Color x:Key="TitanPanelAltColor">#0E1921</Color>
+        <Color x:Key="TitanPanelAltBorderColor">#315266</Color>
+        <Color x:Key="TitanInsetColor">#CC0F172A</Color>
+        <Color x:Key="TitanInsetBorderColor">#334155</Color>
+        <Color x:Key="TitanOverlayColor">#16000000</Color>
+        <Color x:Key="TitanOverlayBorderColor">#223047</Color>
+        <Color x:Key="TitanBadgeColor">#15334450</Color>
+        <Color x:Key="TitanBadgeBorderColor">#3D6478</Color>
+        <Color x:Key="TitanBadgeTextColor">#DCE7EE</Color>
+        <Color x:Key="TitanReleaseItemColor">#132130</Color>
+        <Color x:Key="TitanReleaseItemBorderColor">#274255</Color>
+        <Color x:Key="TitanReleaseDateBadgeColor">#18384A</Color>
+        <Color x:Key="TitanReleaseDateBadgeBorderColor">#3F6478</Color>
+        <Color x:Key="TitanReadableSurfaceColor">#EEF4F7</Color>
+        <Color x:Key="TitanReadableSurfaceAltColor">#F6FAFC</Color>
+        <Color x:Key="TitanReadableSoftColor">#EFF5F8</Color>
+        <Color x:Key="TitanReadableSoftBorderColor">#D7E2EA</Color>
+        <Color x:Key="TitanReadableTextColor">#0F1720</Color>
+        <Color x:Key="TitanReadableMutedTextColor">#617A88</Color>
+        <Color x:Key="TitanReadableSubtleTextColor">#58707E</Color>
+        <Color x:Key="TitanReadableFaintTextColor">#6D8592</Color>
+        <Color x:Key="TitanInputBackgroundColor">#0D1822</Color>
+        <Color x:Key="TitanInputBorderColor">#355569</Color>
+        <Color x:Key="TitanInputFocusBackgroundColor">#0F1926</Color>
+        <Color x:Key="TitanReadableInputFocusColor">#F2FFFC</Color>
+        <Color x:Key="TitanReadableInputSelectionColor">#CFEFEA</Color>
+        <Color x:Key="TitanSecondaryButtonColor">#101D27</Color>
+        <Color x:Key="TitanSecondaryButtonBorderColor">#315266</Color>
+        <Color x:Key="TitanSecondaryButtonHoverColor">#162734</Color>
+        <Color x:Key="TitanSecondaryButtonHoverBorderColor">#4B7084</Color>
+        <Color x:Key="TitanSecondaryButtonPressedColor">#19303E</Color>
+        <Color x:Key="TitanGhostButtonColor">#0E1921</Color>
+        <Color x:Key="TitanGhostButtonTextColor">#EAF4F8</Color>
+        <Color x:Key="TitanDangerButtonColor">#3B0F14</Color>
+        <Color x:Key="TitanDangerButtonBorderColor">#9F3643</Color>
+        <Color x:Key="TitanDangerButtonTextColor">#FFE4E7</Color>
+        <Color x:Key="TitanGridHeaderColor">#172734</Color>
+        <Color x:Key="TitanGridHeaderBorderColor">#294960</Color>
+        <Color x:Key="TitanGridRowHoverColor">#1D3341</Color>
+        <Color x:Key="TitanGridRowSelectedColor">#264355</Color>
+        <Color x:Key="TitanReadableSelectionColor">#DCEAF5</Color>
+        <Color x:Key="TitanFooterBandColor">#880C1822</Color>
+        <Color x:Key="TitanFooterBandBorderColor">#2B4A61</Color>
+        <Color x:Key="TitanLoginChromeColor">#1708111A</Color>
+        <Color x:Key="TitanLoginChromeBorderColor">#263B4D</Color>
+        <Color x:Key="TitanLoginHeaderColor">#AA0C1822</Color>
+        <Color x:Key="TitanLoginHeaderBorderColor">#2B4A61</Color>
+        <Color x:Key="TitanLogoPanelColor">#0E1B27</Color>
+        <Color x:Key="TitanLogoPanelBorderColor">#335166</Color>
+        <Color x:Key="TitanLoginTabInactiveColor">#101928</Color>
+        <Color x:Key="TitanLoginTabInactiveBorderColor">#2A3A66</Color>
+        <Color x:Key="TitanLoginFieldBackgroundColor">#0B1226</Color>
+        <Color x:Key="TitanLoginFieldBorderColor">#2A3A66</Color>
+        <Color x:Key="TitanReadableCalendarBadgeColor">#E9F7F4</Color>
+        <Color x:Key="TitanReadableCalendarBadgeBorderColor">#CBEAE3</Color>
+        <Color x:Key="TitanReadableCalendarMetaColor">#F2F5F8</Color>
+        <Color x:Key="TitanReadableCalendarMetaBorderColor">#DCE4EA</Color>
 
-        <SolidColorBrush x:Key="TitanTextPrimaryBrush" Color="#F6FBFD" po:Freeze="True"/>
-        <SolidColorBrush x:Key="TitanTextSecondaryBrush" Color="#C7D7E0" po:Freeze="True"/>
-        <SolidColorBrush x:Key="TitanTextMutedBrush" Color="#8EA8B7" po:Freeze="True"/>
-        <SolidColorBrush x:Key="TitanAccentBrush" Color="#70E1D1" po:Freeze="True"/>
-        <SolidColorBrush x:Key="TitanAccentWarmBrush" Color="#F0B862" po:Freeze="True"/>
-        <SolidColorBrush x:Key="TitanFieldBackgroundBrush" Color="#0B1320" po:Freeze="True"/>
-        <SolidColorBrush x:Key="TitanFieldBorderBrush" Color="#2D4659" po:Freeze="True"/>
-        <SolidColorBrush x:Key="TitanFieldFocusBrush" Color="#70E1D1" po:Freeze="True"/>
-        <SolidColorBrush x:Key="TitanPrimaryButtonBrush" Color="#F0B862" po:Freeze="True"/>
-        <SolidColorBrush x:Key="TitanPrimaryButtonHoverBrush" Color="#F4C678" po:Freeze="True"/>
-        <SolidColorBrush x:Key="TitanPrimaryButtonPressedBrush" Color="#E8AF54" po:Freeze="True"/>
-        <SolidColorBrush x:Key="TitanPrimaryButtonBorderBrush" Color="#FFD166" po:Freeze="True"/>
+        <SolidColorBrush x:Key="TitanTextPrimaryBrush" Color="{DynamicResource TitanTextPrimaryColor}"/>
+        <SolidColorBrush x:Key="TitanTextSecondaryBrush" Color="{DynamicResource TitanTextSecondaryColor}"/>
+        <SolidColorBrush x:Key="TitanTextMutedBrush" Color="{DynamicResource TitanTextMutedColor}"/>
+        <SolidColorBrush x:Key="TitanAccentBrush" Color="#70E1D1" />
+        <SolidColorBrush x:Key="TitanAccentWarmBrush" Color="#F0B862" />
+        <SolidColorBrush x:Key="TitanFieldBackgroundBrush" Color="{DynamicResource TitanInputBackgroundColor}"/>
+        <SolidColorBrush x:Key="TitanFieldBorderBrush" Color="{DynamicResource TitanInputBorderColor}"/>
+        <SolidColorBrush x:Key="TitanFieldFocusBrush" Color="#70E1D1" />
+        <SolidColorBrush x:Key="TitanPrimaryButtonBrush" Color="#F0B862"/>
+        <SolidColorBrush x:Key="TitanPrimaryButtonHoverBrush" Color="#F4C678"/>
+        <SolidColorBrush x:Key="TitanPrimaryButtonPressedBrush" Color="#E8AF54"/>
+        <SolidColorBrush x:Key="TitanPrimaryButtonBorderBrush" Color="#FFD166"/>
+        <SolidColorBrush x:Key="TitanMetricLabelBrush" Color="{DynamicResource TitanMetricLabelColor}"/>
+        <SolidColorBrush x:Key="TitanInputFocusBackgroundBrush" Color="{DynamicResource TitanInputFocusBackgroundColor}"/>
+        <SolidColorBrush x:Key="TitanWindowFallbackBrush" Color="{DynamicResource TitanWindowFallbackColor}"/>
+        <SolidColorBrush x:Key="TitanGlassCardBorderBrush" Color="{DynamicResource TitanGlassBorderColor}"/>
+        <SolidColorBrush x:Key="TitanCardBrush" Color="{DynamicResource TitanCardColor}"/>
+        <SolidColorBrush x:Key="TitanCardBorderBrush" Color="{DynamicResource TitanCardBorderColor}"/>
+        <SolidColorBrush x:Key="TitanPanelBrush" Color="{DynamicResource TitanPanelColor}"/>
+        <SolidColorBrush x:Key="TitanPanelBorderBrush" Color="{DynamicResource TitanPanelBorderColor}"/>
+        <SolidColorBrush x:Key="TitanPanelAltBrush" Color="{DynamicResource TitanPanelAltColor}"/>
+        <SolidColorBrush x:Key="TitanPanelAltBorderBrush" Color="{DynamicResource TitanPanelAltBorderColor}"/>
+        <SolidColorBrush x:Key="TitanInsetBrush" Color="{DynamicResource TitanInsetColor}"/>
+        <SolidColorBrush x:Key="TitanInsetBorderBrush" Color="{DynamicResource TitanInsetBorderColor}"/>
+        <SolidColorBrush x:Key="TitanOverlayBrush" Color="{DynamicResource TitanOverlayColor}"/>
+        <SolidColorBrush x:Key="TitanOverlayBorderBrush" Color="{DynamicResource TitanOverlayBorderColor}"/>
+        <SolidColorBrush x:Key="TitanBadgeBrush" Color="{DynamicResource TitanBadgeColor}"/>
+        <SolidColorBrush x:Key="TitanBadgeBorderBrush" Color="{DynamicResource TitanBadgeBorderColor}"/>
+        <SolidColorBrush x:Key="TitanBadgeTextBrush" Color="{DynamicResource TitanBadgeTextColor}"/>
+        <SolidColorBrush x:Key="TitanReleaseItemBrush" Color="{DynamicResource TitanReleaseItemColor}"/>
+        <SolidColorBrush x:Key="TitanReleaseItemBorderBrush" Color="{DynamicResource TitanReleaseItemBorderColor}"/>
+        <SolidColorBrush x:Key="TitanReleaseDateBadgeBrush" Color="{DynamicResource TitanReleaseDateBadgeColor}"/>
+        <SolidColorBrush x:Key="TitanReleaseDateBadgeBorderBrush" Color="{DynamicResource TitanReleaseDateBadgeBorderColor}"/>
+        <SolidColorBrush x:Key="TitanReadableSurfaceBrush" Color="{DynamicResource TitanReadableSurfaceColor}"/>
+        <SolidColorBrush x:Key="TitanReadableSurfaceAltBrush" Color="{DynamicResource TitanReadableSurfaceAltColor}"/>
+        <SolidColorBrush x:Key="TitanReadableSoftBrush" Color="{DynamicResource TitanReadableSoftColor}"/>
+        <SolidColorBrush x:Key="TitanReadableSoftBorderBrush" Color="{DynamicResource TitanReadableSoftBorderColor}"/>
+        <SolidColorBrush x:Key="TitanReadableTextBrush" Color="{DynamicResource TitanReadableTextColor}"/>
+        <SolidColorBrush x:Key="TitanReadableMutedTextBrush" Color="{DynamicResource TitanReadableMutedTextColor}"/>
+        <SolidColorBrush x:Key="TitanReadableSubtleTextBrush" Color="{DynamicResource TitanReadableSubtleTextColor}"/>
+        <SolidColorBrush x:Key="TitanReadableFaintTextBrush" Color="{DynamicResource TitanReadableFaintTextColor}"/>
+        <SolidColorBrush x:Key="TitanReadableSelectionBrush" Color="{DynamicResource TitanReadableSelectionColor}"/>
+        <SolidColorBrush x:Key="TitanReadableInputFocusBrush" Color="{DynamicResource TitanReadableInputFocusColor}"/>
+        <SolidColorBrush x:Key="TitanReadableInputSelectionBrush" Color="{DynamicResource TitanReadableInputSelectionColor}"/>
+        <SolidColorBrush x:Key="TitanSecondaryButtonBrush" Color="{DynamicResource TitanSecondaryButtonColor}"/>
+        <SolidColorBrush x:Key="TitanSecondaryButtonBorderBrush" Color="{DynamicResource TitanSecondaryButtonBorderColor}"/>
+        <SolidColorBrush x:Key="TitanSecondaryButtonHoverBrush" Color="{DynamicResource TitanSecondaryButtonHoverColor}"/>
+        <SolidColorBrush x:Key="TitanSecondaryButtonHoverBorderBrush" Color="{DynamicResource TitanSecondaryButtonHoverBorderColor}"/>
+        <SolidColorBrush x:Key="TitanSecondaryButtonPressedBrush" Color="{DynamicResource TitanSecondaryButtonPressedColor}"/>
+        <SolidColorBrush x:Key="TitanGhostButtonBrush" Color="{DynamicResource TitanGhostButtonColor}"/>
+        <SolidColorBrush x:Key="TitanGhostButtonTextBrush" Color="{DynamicResource TitanGhostButtonTextColor}"/>
+        <SolidColorBrush x:Key="TitanDangerButtonBrush" Color="{DynamicResource TitanDangerButtonColor}"/>
+        <SolidColorBrush x:Key="TitanDangerButtonBorderBrush" Color="{DynamicResource TitanDangerButtonBorderColor}"/>
+        <SolidColorBrush x:Key="TitanDangerButtonTextBrush" Color="{DynamicResource TitanDangerButtonTextColor}"/>
+        <SolidColorBrush x:Key="TitanGridHeaderBrush" Color="{DynamicResource TitanGridHeaderColor}"/>
+        <SolidColorBrush x:Key="TitanGridHeaderBorderBrush" Color="{DynamicResource TitanGridHeaderBorderColor}"/>
+        <SolidColorBrush x:Key="TitanGridRowHoverBrush" Color="{DynamicResource TitanGridRowHoverColor}"/>
+        <SolidColorBrush x:Key="TitanGridRowSelectedBrush" Color="{DynamicResource TitanGridRowSelectedColor}"/>
+        <SolidColorBrush x:Key="TitanFooterBandBrush" Color="{DynamicResource TitanFooterBandColor}"/>
+        <SolidColorBrush x:Key="TitanFooterBandBorderBrush" Color="{DynamicResource TitanFooterBandBorderColor}"/>
+        <SolidColorBrush x:Key="TitanLoginChromeBrush" Color="{DynamicResource TitanLoginChromeColor}"/>
+        <SolidColorBrush x:Key="TitanLoginChromeBorderBrush" Color="{DynamicResource TitanLoginChromeBorderColor}"/>
+        <SolidColorBrush x:Key="TitanLoginHeaderBrush" Color="{DynamicResource TitanLoginHeaderColor}"/>
+        <SolidColorBrush x:Key="TitanLoginHeaderBorderBrush" Color="{DynamicResource TitanLoginHeaderBorderColor}"/>
+        <SolidColorBrush x:Key="TitanLogoPanelBrush" Color="{DynamicResource TitanLogoPanelColor}"/>
+        <SolidColorBrush x:Key="TitanLogoPanelBorderBrush" Color="{DynamicResource TitanLogoPanelBorderColor}"/>
+        <SolidColorBrush x:Key="TitanLoginTabInactiveBrush" Color="{DynamicResource TitanLoginTabInactiveColor}"/>
+        <SolidColorBrush x:Key="TitanLoginTabInactiveBorderBrush" Color="{DynamicResource TitanLoginTabInactiveBorderColor}"/>
+        <SolidColorBrush x:Key="TitanLoginFieldBackgroundBrush" Color="{DynamicResource TitanLoginFieldBackgroundColor}"/>
+        <SolidColorBrush x:Key="TitanLoginFieldBorderBrush" Color="{DynamicResource TitanLoginFieldBorderColor}"/>
+        <SolidColorBrush x:Key="TitanReadableCalendarBadgeBrush" Color="{DynamicResource TitanReadableCalendarBadgeColor}"/>
+        <SolidColorBrush x:Key="TitanReadableCalendarBadgeBorderBrush" Color="{DynamicResource TitanReadableCalendarBadgeBorderColor}"/>
+        <SolidColorBrush x:Key="TitanReadableCalendarMetaBrush" Color="{DynamicResource TitanReadableCalendarMetaColor}"/>
+        <SolidColorBrush x:Key="TitanReadableCalendarMetaBorderBrush" Color="{DynamicResource TitanReadableCalendarMetaBorderColor}"/>
+        <LinearGradientBrush x:Key="TitanShellBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="{DynamicResource TitanShellStartColor}" Offset="0.0"/>
+            <GradientStop Color="{DynamicResource TitanShellMidColor}" Offset="0.45"/>
+            <GradientStop Color="{DynamicResource TitanShellEndColor}" Offset="1.0"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="TitanGlassCardBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="{DynamicResource TitanGlassStartColor}" Offset="0.0"/>
+            <GradientStop Color="{DynamicResource TitanGlassEndColor}" Offset="1.0"/>
+        </LinearGradientBrush>
 
         <Style x:Key="TitanEyebrowTextStyle" TargetType="{x:Type TextBlock}">
             <Setter Property="Foreground" Value="{StaticResource TitanTextSecondaryBrush}"/>
@@ -45,7 +188,7 @@
         </Style>
 
         <Style x:Key="TitanMetricLabelTextStyle" TargetType="{x:Type TextBlock}">
-            <Setter Property="Foreground" Value="#8FA9B7"/>
+            <Setter Property="Foreground" Value="{StaticResource TitanMetricLabelBrush}"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
@@ -85,7 +228,7 @@
             <Setter Property="SelectionOpacity" Value="0.35"/>
             <Style.Triggers>
                 <Trigger Property="IsKeyboardFocused" Value="True">
-                    <Setter Property="Background" Value="#0F1926"/>
+                    <Setter Property="Background" Value="{StaticResource TitanInputFocusBackgroundBrush}"/>
                     <Setter Property="BorderBrush" Value="{StaticResource TitanFieldFocusBrush}"/>
                 </Trigger>
             </Style.Triggers>
@@ -105,7 +248,7 @@
             <Setter Property="SelectionOpacity" Value="0.35"/>
             <Style.Triggers>
                 <Trigger Property="IsKeyboardFocused" Value="True">
-                    <Setter Property="Background" Value="#0F1926"/>
+                    <Setter Property="Background" Value="{StaticResource TitanInputFocusBackgroundBrush}"/>
                     <Setter Property="BorderBrush" Value="{StaticResource TitanFieldFocusBrush}"/>
                 </Trigger>
             </Style.Triggers>
@@ -115,7 +258,7 @@
             <Setter Property="Height" Value="48"/>
             <Setter Property="Padding" Value="18,12"/>
             <Setter Property="Background" Value="{StaticResource TitanPrimaryButtonBrush}"/>
-            <Setter Property="Foreground" Value="#07131F"/>
+            <Setter Property="Foreground" Value="{StaticResource TitanReadableTextBrush}"/>
             <Setter Property="BorderBrush" Value="{StaticResource TitanPrimaryButtonBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -148,15 +291,8 @@
         </Style>
 
         <Style x:Key="TitanGlassCardStyle" TargetType="{x:Type Border}">
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#D9172531" Offset="0.0"/>
-                        <GradientStop Color="#C90E1821" Offset="1.0"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
-            <Setter Property="BorderBrush" Value="#294960"/>
+            <Setter Property="Background" Value="{StaticResource TitanGlassCardBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource TitanGlassCardBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="22"/>
             <Setter Property="Padding" Value="22"/>
@@ -171,17 +307,17 @@
         <Style x:Key="ModuleCard" TargetType="{x:Type Border}" BasedOn="{StaticResource TitanGlassCardStyle}"/>
 
         <Style x:Key="CardStyle" TargetType="{x:Type Border}">
-            <Setter Property="Background" Value="#D9141F2A"/>
-            <Setter Property="BorderBrush" Value="#2F5165"/>
+            <Setter Property="Background" Value="{StaticResource TitanCardBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource TitanCardBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="22"/>
             <Setter Property="Padding" Value="22"/>
         </Style>
 
         <Style x:Key="NavButtonStyle" TargetType="{x:Type Button}">
-            <Setter Property="Foreground" Value="#ECF7FB"/>
-            <Setter Property="Background" Value="#10202B"/>
-            <Setter Property="BorderBrush" Value="#315063"/>
+            <Setter Property="Foreground" Value="{StaticResource TitanTextPrimaryBrush}"/>
+            <Setter Property="Background" Value="{StaticResource TitanPanelBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource TitanPanelBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="16,12"/>
             <Setter Property="Margin" Value="0,0,0,10"/>
@@ -190,7 +326,7 @@
         </Style>
 
         <Style x:Key="AccentNavButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource NavButtonStyle}">
-            <Setter Property="Foreground" Value="#07131F"/>
+            <Setter Property="Foreground" Value="{StaticResource TitanReadableTextBrush}"/>
             <Setter Property="Background" Value="#F0B862"/>
             <Setter Property="BorderBrush" Value="#FFD166"/>
         </Style>
@@ -201,7 +337,7 @@
         </Style>
 
         <Style x:Key="AccentActionButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource ActionButtonStyle}">
-            <Setter Property="Foreground" Value="#07131F"/>
+            <Setter Property="Foreground" Value="{StaticResource TitanReadableTextBrush}"/>
             <Setter Property="Background" Value="#F0B862"/>
             <Setter Property="BorderBrush" Value="#FFD166"/>
         </Style>
@@ -209,9 +345,9 @@
         <Style x:Key="SecondaryButtonStyle" TargetType="{x:Type Button}">
             <Setter Property="Height" Value="46"/>
             <Setter Property="Padding" Value="18,12"/>
-            <Setter Property="Foreground" Value="#EDF7FB"/>
-            <Setter Property="Background" Value="#101D27"/>
-            <Setter Property="BorderBrush" Value="#315266"/>
+            <Setter Property="Foreground" Value="{StaticResource TitanTextPrimaryBrush}"/>
+            <Setter Property="Background" Value="{StaticResource TitanSecondaryButtonBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource TitanSecondaryButtonBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -228,11 +364,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Chrome" Property="Background" Value="#162734"/>
-                                <Setter TargetName="Chrome" Property="BorderBrush" Value="#4B7084"/>
+                                <Setter TargetName="Chrome" Property="Background" Value="{StaticResource TitanSecondaryButtonHoverBrush}"/>
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource TitanSecondaryButtonHoverBorderBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Chrome" Property="Background" Value="#19303E"/>
+                                <Setter TargetName="Chrome" Property="Background" Value="{StaticResource TitanSecondaryButtonPressedBrush}"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="Chrome" Property="Opacity" Value="0.6"/>
@@ -244,20 +380,24 @@
         </Style>
 
         <Style x:Key="DangerButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource SecondaryButtonStyle}">
-            <Setter Property="Background" Value="#3B0F14"/>
-            <Setter Property="BorderBrush" Value="#9F3643"/>
-            <Setter Property="Foreground" Value="#FFE4E7"/>
+            <Setter Property="Background" Value="{StaticResource TitanDangerButtonBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource TitanDangerButtonBorderBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TitanDangerButtonTextBrush}"/>
         </Style>
 
         <Style x:Key="GhostButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource SecondaryButtonStyle}">
             <Setter Property="Height" Value="40"/>
             <Setter Property="Padding" Value="16,10"/>
-            <Setter Property="Background" Value="#0E1921"/>
-            <Setter Property="Foreground" Value="#EAF4F8"/>
+            <Setter Property="Background" Value="{StaticResource TitanGhostButtonBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TitanGhostButtonTextBrush}"/>
         </Style>
 
         <Style x:Key="CalendarNavButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource GhostButtonStyle}">
             <Setter Property="MinWidth" Value="88"/>
+        </Style>
+        <Style x:Key="ThemeToggleButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource GhostButtonStyle}">
+            <Setter Property="MinWidth" Value="118"/>
+            <Setter Property="Height" Value="40"/>
         </Style>
 
         <Style x:Key="FlatCardButtonStyle" TargetType="{x:Type Button}">
@@ -277,65 +417,65 @@
             </Setter>
         </Style>
         <Style x:Key="InputBoxStyle" TargetType="{x:Type TextBox}">
-            <Setter Property="Background" Value="#0D1822"/>
-            <Setter Property="Foreground" Value="#F6FBFD"/>
-            <Setter Property="BorderBrush" Value="#355569"/>
+            <Setter Property="Background" Value="{StaticResource TitanFieldBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TitanTextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource TitanFieldBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="14,10"/>
-            <Setter Property="CaretBrush" Value="#F6FBFD"/>
+            <Setter Property="CaretBrush" Value="{StaticResource TitanTextPrimaryBrush}"/>
             <Setter Property="SelectionBrush" Value="{StaticResource TitanAccentBrush}"/>
             <Setter Property="SelectionOpacity" Value="0.35"/>
             <Setter Property="local:WheelScrollAssist.IsEnabled" Value="True"/>
         </Style>
 
         <Style x:Key="InputComboBoxStyle" TargetType="{x:Type ComboBox}">
-            <Setter Property="Background" Value="#0D1822"/>
-            <Setter Property="Foreground" Value="#F6FBFD"/>
-            <Setter Property="BorderBrush" Value="#355569"/>
+            <Setter Property="Background" Value="{StaticResource TitanFieldBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TitanTextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource TitanFieldBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="12,8"/>
             <Setter Property="Height" Value="44"/>
         </Style>
 
         <Style x:Key="InputDatePickerStyle" TargetType="{x:Type DatePicker}">
-            <Setter Property="Background" Value="#0D1822"/>
-            <Setter Property="Foreground" Value="#F6FBFD"/>
-            <Setter Property="BorderBrush" Value="#355569"/>
+            <Setter Property="Background" Value="{StaticResource TitanFieldBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TitanTextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource TitanFieldBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Height" Value="44"/>
         </Style>
 
         <Style x:Key="CrmReadableInputBoxStyle" TargetType="{x:Type TextBox}" BasedOn="{StaticResource InputBoxStyle}">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#111111"/>
-            <Setter Property="BorderBrush" Value="#C9D4DB"/>
-            <Setter Property="CaretBrush" Value="#111111"/>
+            <Setter Property="Background" Value="{StaticResource TitanReadableSurfaceAltBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TitanReadableTextBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource TitanReadableSoftBorderBrush}"/>
+            <Setter Property="CaretBrush" Value="{StaticResource TitanReadableTextBrush}"/>
         </Style>
 
         <Style x:Key="CrmReadableComboBoxItemStyle" TargetType="{x:Type ComboBoxItem}">
-            <Setter Property="Foreground" Value="#111111"/>
-            <Setter Property="Background" Value="#FFFFFF"/>
+            <Setter Property="Foreground" Value="{StaticResource TitanReadableTextBrush}"/>
+            <Setter Property="Background" Value="{StaticResource TitanReadableSurfaceAltBrush}"/>
         </Style>
 
         <Style x:Key="CrmReadableComboBoxStyle" TargetType="{x:Type ComboBox}" BasedOn="{StaticResource InputComboBoxStyle}">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#111111"/>
-            <Setter Property="BorderBrush" Value="#C9D4DB"/>
+            <Setter Property="Background" Value="{StaticResource TitanReadableSurfaceAltBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TitanReadableTextBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource TitanReadableSoftBorderBrush}"/>
             <Setter Property="ItemContainerStyle" Value="{StaticResource CrmReadableComboBoxItemStyle}"/>
         </Style>
 
         <Style x:Key="CalendarReadableTextBoxStyle" TargetType="{x:Type TextBox}" BasedOn="{StaticResource TitanInputTextBoxStyle}">
-            <Setter Property="Background" Value="#FFFFFF"/>
+            <Setter Property="Background" Value="{StaticResource TitanReadableSurfaceAltBrush}"/>
             <Setter Property="Foreground" Value="#0B1320"/>
-            <Setter Property="BorderBrush" Value="#C9D4DB"/>
+            <Setter Property="BorderBrush" Value="{StaticResource TitanReadableSoftBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1.5"/>
             <Setter Property="CaretBrush" Value="#0B1320"/>
-            <Setter Property="SelectionBrush" Value="#CFEFEA"/>
+            <Setter Property="SelectionBrush" Value="{StaticResource TitanReadableInputSelectionBrush}"/>
             <Setter Property="SelectionOpacity" Value="0.85"/>
             <Style.Triggers>
                 <Trigger Property="IsKeyboardFocused" Value="True">
-                    <Setter Property="Background" Value="#F2FFFC"/>
-                    <Setter Property="Foreground" Value="#07131F"/>
+                    <Setter Property="Background" Value="{StaticResource TitanReadableInputFocusBrush}"/>
+                    <Setter Property="Foreground" Value="{StaticResource TitanReadableTextBrush}"/>
                     <Setter Property="BorderBrush" Value="#36BBA9"/>
                     <Setter Property="BorderThickness" Value="2"/>
                 </Trigger>
@@ -352,27 +492,27 @@
         </Style>
 
         <Style x:Key="CalendarReadablePasswordBoxStyle" TargetType="{x:Type PasswordBox}" BasedOn="{StaticResource TitanInputPasswordBoxStyle}">
-            <Setter Property="Background" Value="#FFFFFF"/>
+            <Setter Property="Background" Value="{StaticResource TitanReadableSurfaceAltBrush}"/>
             <Setter Property="Foreground" Value="#0B1320"/>
-            <Setter Property="BorderBrush" Value="#C9D4DB"/>
+            <Setter Property="BorderBrush" Value="{StaticResource TitanReadableSoftBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1.5"/>
-            <Setter Property="SelectionBrush" Value="#CFEFEA"/>
+            <Setter Property="SelectionBrush" Value="{StaticResource TitanReadableInputSelectionBrush}"/>
             <Setter Property="SelectionOpacity" Value="0.85"/>
             <Style.Triggers>
                 <Trigger Property="IsKeyboardFocused" Value="True">
-                    <Setter Property="Background" Value="#F2FFFC"/>
-                    <Setter Property="Foreground" Value="#07131F"/>
+                    <Setter Property="Background" Value="{StaticResource TitanReadableInputFocusBrush}"/>
+                    <Setter Property="Foreground" Value="{StaticResource TitanReadableTextBrush}"/>
                     <Setter Property="BorderBrush" Value="#36BBA9"/>
                     <Setter Property="BorderThickness" Value="2"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
         <Style x:Key="TitanReadableDatePickerTextBoxStyle" TargetType="{x:Type DatePickerTextBox}">
-            <Setter Property="Foreground" Value="#111111"/>
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="BorderBrush" Value="#C9D4DB"/>
+            <Setter Property="Foreground" Value="{StaticResource TitanReadableTextBrush}"/>
+            <Setter Property="Background" Value="{StaticResource TitanReadableSurfaceAltBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource TitanReadableSoftBorderBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="CaretBrush" Value="#111111"/>
+            <Setter Property="CaretBrush" Value="{StaticResource TitanReadableTextBrush}"/>
             <Setter Property="SelectionBrush" Value="{StaticResource TitanAccentBrush}"/>
             <Setter Property="SelectionOpacity" Value="0.35"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -534,9 +674,9 @@
         <Style x:Key="CrmReadablePopupCalendarStyle" TargetType="{x:Type Calendar}" BasedOn="{StaticResource TitanReadablePopupCalendarStyle}"/>
 
         <Style x:Key="TitanReadableDatePickerStyle" TargetType="{x:Type DatePicker}" BasedOn="{StaticResource InputDatePickerStyle}">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#111111"/>
-            <Setter Property="BorderBrush" Value="#C9D4DB"/>
+            <Setter Property="Background" Value="{StaticResource TitanReadableSurfaceAltBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TitanReadableTextBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource TitanReadableSoftBorderBrush}"/>
             <Setter Property="TextElement.Foreground" Value="#111111"/>
             <Setter Property="CalendarStyle" Value="{StaticResource TitanReadablePopupCalendarStyle}"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -651,48 +791,48 @@
         </Style>
 
         <Style x:Key="TitanReadableDataGridCellStyle" TargetType="{x:Type DataGridCell}">
-            <Setter Property="Foreground" Value="#111111"/>
+            <Setter Property="Foreground" Value="{StaticResource TitanReadableTextBrush}"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="TextBlock.Foreground" Value="#111111"/>
+            <Setter Property="TextBlock.Foreground" Value="{StaticResource TitanReadableTextBrush}"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#DCEAF5"/>
-                    <Setter Property="Foreground" Value="#111111"/>
-                    <Setter Property="TextBlock.Foreground" Value="#111111"/>
+                    <Setter Property="Background" Value="{StaticResource TitanReadableSelectionBrush}"/>
+                    <Setter Property="Foreground" Value="{StaticResource TitanReadableTextBrush}"/>
+                    <Setter Property="TextBlock.Foreground" Value="{StaticResource TitanReadableTextBrush}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
         <Style x:Key="TitanReadableDataGridRowStyle" TargetType="{x:Type DataGridRow}">
-            <Setter Property="Foreground" Value="#111111"/>
+            <Setter Property="Foreground" Value="{StaticResource TitanReadableTextBrush}"/>
             <Setter Property="Background" Value="Transparent"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#DCEAF5"/>
-                    <Setter Property="Foreground" Value="#111111"/>
+                    <Setter Property="Background" Value="{StaticResource TitanReadableSelectionBrush}"/>
+                    <Setter Property="Foreground" Value="{StaticResource TitanReadableTextBrush}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
         <Style x:Key="TitanReadableDataGridHeaderStyle" TargetType="{x:Type DataGridColumnHeader}">
-            <Setter Property="Background" Value="#EEF3F7"/>
-            <Setter Property="Foreground" Value="#111111"/>
+            <Setter Property="Background" Value="{StaticResource TitanReadableSoftBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TitanReadableTextBrush}"/>
             <Setter Property="BorderThickness" Value="0,0,0,1"/>
-            <Setter Property="BorderBrush" Value="#D4DEE6"/>
+            <Setter Property="BorderBrush" Value="{StaticResource TitanReadableSoftBorderBrush}"/>
             <Setter Property="Padding" Value="10,8"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
 
         <Style x:Key="TitanReadableDataGridStyle" TargetType="{x:Type DataGrid}" BasedOn="{StaticResource TitanDataGridBaseStyle}">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#111111"/>
-            <Setter Property="BorderBrush" Value="#D4DEE6"/>
+            <Setter Property="Background" Value="{StaticResource TitanReadableSurfaceAltBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TitanReadableTextBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource TitanReadableSoftBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="RowBackground" Value="#FFFFFF"/>
-            <Setter Property="AlternatingRowBackground" Value="#F6F9FB"/>
+            <Setter Property="RowBackground" Value="{StaticResource TitanReadableSurfaceAltBrush}"/>
+            <Setter Property="AlternatingRowBackground" Value="{StaticResource TitanReadableSurfaceBrush}"/>
             <Setter Property="CellStyle" Value="{StaticResource TitanReadableDataGridCellStyle}"/>
             <Setter Property="RowStyle" Value="{StaticResource TitanReadableDataGridRowStyle}"/>
             <Setter Property="ColumnHeaderStyle" Value="{StaticResource TitanReadableDataGridHeaderStyle}"/>
@@ -714,11 +854,11 @@
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="TextBlock.Foreground" Value="#F3F9FC"/>
+            <Setter Property="TextBlock.Foreground" Value="{StaticResource TitanTextPrimaryBrush}"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#264355"/>
+                    <Setter Property="Background" Value="{StaticResource TitanGridRowSelectedBrush}"/>
                     <Setter Property="Foreground" Value="#F8FBFD"/>
                     <Setter Property="TextBlock.Foreground" Value="#F8FBFD"/>
                 </Trigger>
@@ -730,20 +870,20 @@
             <Setter Property="Background" Value="Transparent"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#1D3341"/>
+                    <Setter Property="Background" Value="{StaticResource TitanGridRowHoverBrush}"/>
                 </Trigger>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#264355"/>
+                    <Setter Property="Background" Value="{StaticResource TitanGridRowSelectedBrush}"/>
                     <Setter Property="Foreground" Value="#F8FBFD"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
         <Style x:Key="TitanDarkDataGridHeaderStyle" TargetType="{x:Type DataGridColumnHeader}">
-            <Setter Property="Background" Value="#172734"/>
+            <Setter Property="Background" Value="{StaticResource TitanGridHeaderBrush}"/>
             <Setter Property="Foreground" Value="#9FB5C1"/>
             <Setter Property="BorderThickness" Value="0,0,0,1"/>
-            <Setter Property="BorderBrush" Value="#294960"/>
+            <Setter Property="BorderBrush" Value="{StaticResource TitanGridHeaderBorderBrush}"/>
             <Setter Property="Padding" Value="10,8"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
@@ -759,13 +899,13 @@
         </Style>
 
         <Style x:Key="TitanDashboardDarkDataGridStyle" TargetType="{x:Type DataGrid}" BasedOn="{StaticResource TitanDarkDataGridBaseStyle}">
-            <Setter Property="RowBackground" Value="#12000000"/>
-            <Setter Property="AlternatingRowBackground" Value="#1B000000"/>
+            <Setter Property="RowBackground" Value="{StaticResource TitanOverlayBrush}"/>
+            <Setter Property="AlternatingRowBackground" Value="{StaticResource TitanBadgeBrush}"/>
         </Style>
 
         <Style x:Key="TitanModuleDarkDataGridStyle" TargetType="{x:Type DataGrid}" BasedOn="{StaticResource TitanDarkDataGridBaseStyle}">
-            <Setter Property="RowBackground" Value="#11000000"/>
-            <Setter Property="AlternatingRowBackground" Value="#16000000"/>
+            <Setter Property="RowBackground" Value="{StaticResource TitanOverlayBrush}"/>
+            <Setter Property="AlternatingRowBackground" Value="{StaticResource TitanBadgeBrush}"/>
         </Style>
         <Style TargetType="{x:Type Window}">
             <Setter Property="Icon" Value="{StaticResource TitanWindowIcon}"/>
@@ -775,6 +915,9 @@
         </Style>
     </Application.Resources>
 </Application>
+
+
+
 
 
 

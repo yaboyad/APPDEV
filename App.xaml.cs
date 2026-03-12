@@ -13,11 +13,13 @@ public partial class App : Application
     public static CalendarSyncCredentialRepository CalendarSyncCredentials { get; } = new CalendarSyncCredentialRepository();
     public static GoogleCalendarSyncService GoogleCalendar { get; } = new GoogleCalendarSyncService();
     public static AppleCalendarSyncService AppleCalendar { get; } = new AppleCalendarSyncService();
+    public static AppThemeService Theme { get; } = new AppThemeService();
 
     protected override async void OnStartup(StartupEventArgs e)
     {
         using var startupTiming = PerformanceInstrumentation.Measure("startup.app");
         base.OnStartup(e);
+        Theme.Initialize(Resources);
         startupTiming.Checkpoint("wpf-ready");
 
         try

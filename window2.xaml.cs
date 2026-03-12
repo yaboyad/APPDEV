@@ -24,50 +24,59 @@ public partial class Window2 : Window
 
     private readonly DispatcherTimer clockTimer = new DispatcherTimer();
     private readonly AuthenticatedUser currentUser;
+    private readonly CredentialRepository credentialRepository;
     private readonly WorkspaceRepository workspaceRepository;
     private readonly CalendarRepository calendarRepository;
     private readonly SupportSubmissionRepository supportSubmissionRepository;
     private readonly ObservableCollection<SupportSubmissionRecord> supportSubmissions = new ObservableCollection<SupportSubmissionRecord>();
+    private readonly ObservableCollection<ManagedAccountRecord> managedAccounts = new ObservableCollection<ManagedAccountRecord>();
     private readonly ObservableCollection<ContactRecord> contacts = new ObservableCollection<ContactRecord>();
     private readonly ObservableCollection<ContractRecord> contracts = new ObservableCollection<ContractRecord>();
     private readonly ObservableCollection<CalendarEventRecord> calendarItems = new ObservableCollection<CalendarEventRecord>();
+    private readonly ObservableCollection<SocialPlatformRow> dataWatchRows = new ObservableCollection<SocialPlatformRow>();
     private readonly ObservableCollection<ActivityRow> activityRows = new ObservableCollection<ActivityRow>();
+    private string? selectedManagedAccountUsername;
     private string? editingContactId;
     private string? editingContractId;
     private bool hasCompletedInitialDashboardLoad;
     private bool isRefreshingDashboard;
 
     public Window2()
-        : this(new AuthenticatedUser("Admin", "Admin", AccountTier: AccountTiers.Master), App.WorkspaceData, App.CalendarEvents, new SupportSubmissionRepository())
+        : this(new AuthenticatedUser("Admin", "Admin", AccountTier: AccountTiers.Master), App.Credentials, App.WorkspaceData, App.CalendarEvents, new SupportSubmissionRepository())
     {
     }
 
     public Window2(AuthenticatedUser currentUser)
-        : this(currentUser, App.WorkspaceData, App.CalendarEvents, new SupportSubmissionRepository())
+        : this(currentUser, App.Credentials, App.WorkspaceData, App.CalendarEvents, new SupportSubmissionRepository())
     {
     }
 
     internal Window2(
         AuthenticatedUser currentUser,
+        CredentialRepository credentialRepository,
         WorkspaceRepository workspaceRepository,
         CalendarRepository calendarRepository,
         SupportSubmissionRepository supportSubmissionRepository)
     {
         using var initTiming = PerformanceInstrumentation.Measure("dashboard.window-init", ("user", currentUser.Username), ("tier", currentUser.TierLabel));
         this.currentUser = currentUser;
+        this.credentialRepository = credentialRepository;
         this.workspaceRepository = workspaceRepository;
         this.calendarRepository = calendarRepository;
         this.supportSubmissionRepository = supportSubmissionRepository;
 
         InitializeComponent();
+        InitializeThemeState();
         InitializeInteractiveStates();
 
         SupportSubmissionsGrid.ItemsSource = supportSubmissions;
+        AccountsGrid.ItemsSource = managedAccounts;
         ContactsGrid.ItemsSource = contacts;
         ContractsGrid.ItemsSource = contracts;
         CalendarGrid.ItemsSource = calendarItems;
+        DataWatchGrid.ItemsSource = dataWatchRows;
         ActivityGrid.ItemsSource = activityRows;
-
+        InitializeOutreachUi();
         SetSupportStatus("Support center ready.", SupportNeutralBrush);
         SetContactStatus("Add a contact or select one below to edit it.", SupportNeutralBrush);
         SetContractStatus("Add a contract or select one below to edit it.", SupportNeutralBrush);
@@ -84,7 +93,9 @@ public partial class Window2 : Window
         };
 
         clockTimer.Interval = TimeSpan.FromSeconds(1);
-        clockTimer.Tick += (_, _) => ClockText.Text = DateTime.Now.ToString("h:mm:ss tt", CultureInfo.CurrentCulture);
+        clockTimer.Tick += (_, _) => UpdateHeaderDateTime();
+        UpdateHeaderDateTime();
+        Closed += (_, _) => clockTimer.Stop();
     }
 
     private static SolidColorBrush CreateBrush(string hex)
@@ -109,8 +120,12 @@ public partial class Window2 : Window
             PaymentMetricCard,
             RevenueCard,
             TasksCard,
+            AccountsManagementSection,
+            AccountsSummaryCard,
             PaymentsSection,
             CalendarSection,
+            DataSection,
+            DataInsightCard,
             ContactsSection,
             ContractsManagerSection,
             SupportSection,
@@ -136,6 +151,8 @@ public partial class Window2 : Window
             using var refreshTiming = PerformanceInstrumentation.Measure(operationName, ("user", currentUser.Username));
             await LoadSupportDataAsync();
             refreshTiming.Checkpoint("support-ready", ("submissions", supportSubmissions.Count));
+            await LoadAccountManagementAsync();
+            refreshTiming.Checkpoint("accounts-ready", ("accounts", managedAccounts.Count));
             await LoadDashboardDataAsync();
             refreshTiming.Checkpoint("workspace-ready", ("contacts", contacts.Count), ("contracts", contracts.Count), ("calendarItems", calendarItems.Count));
             hasCompletedInitialDashboardLoad = true;
@@ -157,6 +174,10 @@ public partial class Window2 : Window
             RevenueCard,
             TasksCard,
             StoreCard,
+            AccountsManagementSection,
+            AccountsSummaryCard,
+            DataSection,
+            DataInsightCard,
             ContactsSection,
             ContractsManagerSection,
             SupportSection,
@@ -168,16 +189,23 @@ public partial class Window2 : Window
         {
             OverviewButton,
             AccountButton,
+            AccountsAdminButton,
             PaymentsButton,
             ContractsButton,
             CalendarButton,
             SmsButton,
             EmailButton,
+            DataButton,
             SupportButton,
             OpenPaymentsButton,
             OpenContractsButton,
             OpenSmsButton,
+            OpenDataButton,
             OpenSupportButton,
+            ThemeToggleButton,
+            BanAccountButton,
+            RestoreAccountButton,
+            RefreshAccountsButton,
             SaveContactButton,
             ResetContactButton,
             SaveContractButton,
@@ -193,6 +221,14 @@ public partial class Window2 : Window
         }, -4, 1.01);
     }
 
+    private void UpdateHeaderDateTime()
+    {
+        var now = DateTime.Now;
+        CurrentDateText.Text = now.ToString("dddd, MMMM d, yyyy", CultureInfo.CurrentCulture);
+        ClockText.Text = now.ToString("h:mm:ss tt", CultureInfo.CurrentCulture);
+    }
+
+    
     private void ApplyUserState()
     {
         UserNameText.Text = $"{currentUser.DisplayName} | {currentUser.TierLabel}";
@@ -202,7 +238,27 @@ public partial class Window2 : Window
         AccountStatusText.Text = currentUser.TierLabel;
         NextPaymentText.Text = "$49.00";
         NextPaymentDateText.Text = $"Due {GetNextPaymentDueDate(DateTime.Today):MMMM dd}";
+        ConfigureAccountManagementExperience();
         ConfigureSupportExperience();
+    }
+
+    private void ConfigureAccountManagementExperience()
+    {
+        var isMaster = currentUser.IsMaster;
+        AccountsAdminButton.Visibility = isMaster ? Visibility.Visible : Visibility.Collapsed;
+        AccountsManagementHost.Visibility = isMaster ? Visibility.Visible : Visibility.Collapsed;
+
+        if (!isMaster)
+        {
+            ReplaceCollection(managedAccounts, Array.Empty<ManagedAccountRecord>());
+            selectedManagedAccountUsername = null;
+            ApplySelectedManagedAccount(null);
+            return;
+        }
+
+        SetAccountsStatus("Select an account to review or change access.", SupportNeutralBrush);
+        AccountsStorePathText.Text = credentialRepository.StoragePath;
+        ApplySelectedManagedAccount(null);
     }
 
     private void ConfigureSupportExperience()
@@ -230,7 +286,8 @@ public partial class Window2 : Window
     {
         using var loadTiming = PerformanceInstrumentation.Measure("dashboard.load-data", ("user", currentUser.Username));
         PaymentsGrid.ItemsSource = BuildPaymentRows();
-        loadTiming.Checkpoint("payments-bound");
+        ReplaceCollection(dataWatchRows, ModuleWindowState.CreateDataWatchRows());
+        loadTiming.Checkpoint("payments-and-data-bound", ("dataSources", dataWatchRows.Count));
         await LoadWorkspaceDataAsync();
         loadTiming.Checkpoint("workspace-bound", ("contacts", contacts.Count), ("contracts", contracts.Count), ("calendarItems", calendarItems.Count));
     }
@@ -242,6 +299,7 @@ public partial class Window2 : Window
         loadTiming.Checkpoint("snapshot-loaded", ("contacts", snapshot.Contacts.Count), ("contracts", snapshot.Contracts.Count));
         ReplaceCollection(contacts, snapshot.Contacts);
         ReplaceCollection(contracts, snapshot.Contracts);
+        ApplyOutreachCampaigns(snapshot.OutreachCampaigns);
         await SyncWorkspaceCalendarEventsAsync();
         loadTiming.Checkpoint("calendar-synced");
         await RefreshCalendarGridAsync();
@@ -262,11 +320,12 @@ public partial class Window2 : Window
         TasksText.Text = CountUpcomingFollowUps().ToString(CultureInfo.InvariantCulture);
         NextPaymentText.Text = "$49.00";
         NextPaymentDateText.Text = $"Due {GetNextPaymentDueDate(DateTime.Today):MMMM dd}";
+        RefreshOutreachSummary();
     }
 
     private void RefreshStorageSummary()
     {
-        StorageText.Text = $"{contacts.Count} contacts / {contracts.Count} contracts{Environment.NewLine}CRM: {workspaceRepository.StoragePath}{Environment.NewLine}Calendar: {calendarRepository.StoragePath}";
+        StorageText.Text = $"{contacts.Count} contacts / {contracts.Count} contracts / {GetOutreachCampaignCount()} outreach campaign(s){Environment.NewLine}CRM: {workspaceRepository.StoragePath}{Environment.NewLine}Calendar: {calendarRepository.StoragePath}";
     }
 
     private async Task RefreshActivityGridAsync()
@@ -275,6 +334,8 @@ public partial class Window2 : Window
         var latestContract = contracts.OrderByDescending(contract => contract.UpdatedUtc).FirstOrDefault();
         var latestSupportSubmission = supportSubmissions.FirstOrDefault();
         var nextCalendarEvent = calendarItems.FirstOrDefault();
+        var dataSources = ModuleWindowState.CreateDataWatchRows();
+        var readyDataSources = dataSources.Count(source => source.Status.StartsWith("Ready", StringComparison.OrdinalIgnoreCase));
         var syncedEvents = await calendarRepository.GetUpcomingEventsAsync(12);
         var calendarStatus = syncedEvents.Any(item =>
             !string.IsNullOrWhiteSpace(item.GoogleEventId) ||
@@ -289,7 +350,7 @@ public partial class Window2 : Window
         var supportOwner = latestSupportSubmission?.SubmittedByLabel ?? (currentUser.IsMaster ? "All accounts" : currentUser.DisplayName);
         var supportStatus = latestSupportSubmission is null ? "Ready" : latestSupportSubmission.PriorityLabel;
 
-        ReplaceCollection(activityRows, new[]
+        var rows = new List<ActivityRow>
         {
             new ActivityRow(
                 "Contacts",
@@ -307,11 +368,19 @@ public partial class Window2 : Window
                 currentUser.DisplayName,
                 calendarStatus),
             new ActivityRow(
+                "Data watch",
+                $"{dataSources.Count} source(s) lined up for audience and reach checks",
+                "Shared watchlist",
+                readyDataSources == dataSources.Count ? "Ready" : $"{readyDataSources} ready"),
+            new ActivityRow(
                 "Support",
                 supportAction,
                 supportOwner,
                 supportStatus)
-        });
+        };
+
+        rows.AddRange(BuildOutreachActivityRows());
+        ReplaceCollection(activityRows, rows);
     }
 
     private async Task LoadSupportDataAsync()
@@ -351,7 +420,6 @@ public partial class Window2 : Window
         await RefreshActivityGridAsync();
         loadTiming.Checkpoint("support-ready", ("submissions", supportSubmissions.Count));
     }
-
     private void UpdateSupportSummary()
     {
         if (!currentUser.IsMaster)
@@ -389,6 +457,77 @@ public partial class Window2 : Window
         SelectedSupportSubmissionMetaText.Text = $"{submission.SubmittedByLabel} | {submission.TierLabel} | {submission.Channel} | {submission.PriorityLabel} | {submission.CreatedAt:MMM dd, h:mm tt}";
         SelectedSupportSubmissionBodyText.Text = submission.Body;
     }
+
+    private async Task LoadAccountManagementAsync()
+    {
+        if (!currentUser.IsMaster)
+        {
+            ReplaceCollection(managedAccounts, Array.Empty<ManagedAccountRecord>());
+            selectedManagedAccountUsername = null;
+            ApplySelectedManagedAccount(null);
+            return;
+        }
+
+        var preservedUsername = selectedManagedAccountUsername;
+        if (AccountsGrid.SelectedItem is ManagedAccountRecord selectedAccount)
+        {
+            preservedUsername = selectedAccount.Username;
+        }
+
+        var accounts = await credentialRepository.GetManagedAccountsAsync();
+        ReplaceCollection(managedAccounts, accounts);
+        UpdateAccountManagementSummary();
+
+        var selectedRecord = managedAccounts.FirstOrDefault(account =>
+                                string.Equals(account.Username, preservedUsername, StringComparison.OrdinalIgnoreCase))
+                            ?? managedAccounts.FirstOrDefault();
+
+        AccountsGrid.SelectedItem = selectedRecord;
+        ApplySelectedManagedAccount(selectedRecord);
+    }
+
+    private void UpdateAccountManagementSummary()
+    {
+        if (!currentUser.IsMaster)
+        {
+            return;
+        }
+
+        ManagedAccountsCountText.Text = managedAccounts.Count.ToString(CultureInfo.InvariantCulture);
+        ActiveAccountsCountText.Text = managedAccounts.Count(account => !account.IsBanned).ToString(CultureInfo.InvariantCulture);
+        BannedAccountsCountText.Text = managedAccounts.Count(account => account.IsBanned).ToString(CultureInfo.InvariantCulture);
+        ProtectedAccountsCountText.Text = managedAccounts.Count(account => account.IsMaster).ToString(CultureInfo.InvariantCulture);
+        AccountsStorePathText.Text = credentialRepository.StoragePath;
+    }
+
+    private void ApplySelectedManagedAccount(ManagedAccountRecord? account)
+    {
+        if (account is null)
+        {
+            SelectedAccountNameText.Text = "No account selected";
+            SelectedAccountMetaText.Text = "Select an account to review its tier and access state.";
+            SelectedAccountAccessText.Text = "Waiting for selection";
+            SelectedAccountAccessText.Foreground = SupportNeutralBrush;
+            SelectedAccountNotesText.Text = "User accounts can be banned or restored here. Master accounts stay protected to avoid lockouts.";
+            BanAccountButton.IsEnabled = false;
+            RestoreAccountButton.IsEnabled = false;
+            return;
+        }
+
+        selectedManagedAccountUsername = account.Username;
+        SelectedAccountNameText.Text = account.DisplayName;
+        SelectedAccountMetaText.Text = $"{account.Username} | {account.TierLabel} | {account.ContactLabel}";
+        SelectedAccountAccessText.Text = account.AccessStatus;
+        SelectedAccountAccessText.Foreground = account.IsMaster
+            ? SupportNeutralBrush
+            : account.IsBanned
+                ? SupportUrgentBrush
+                : SupportSuccessBrush;
+        SelectedAccountNotesText.Text = account.AccessNotes;
+        BanAccountButton.IsEnabled = !account.IsMaster && !account.IsBanned;
+        RestoreAccountButton.IsEnabled = !account.IsMaster && account.IsBanned;
+    }
+
     private void Nav_Overview_Click(object sender, RoutedEventArgs e)
     {
         DashboardScrollViewer.ScrollToTop();
@@ -397,6 +536,16 @@ public partial class Window2 : Window
 
     private void Nav_Account_Click(object sender, RoutedEventArgs e)
         => OpenModule(ModuleWindowState.CreateAccount(currentUser));
+
+    private void Nav_AccountsAdmin_Click(object sender, RoutedEventArgs e)
+    {
+        if (!currentUser.IsMaster)
+        {
+            return;
+        }
+
+        FocusSection(AccountsGrid);
+    }
 
     private void Nav_Payments_Click(object sender, RoutedEventArgs e)
         => OpenModule(ModuleWindowState.CreatePayments());
@@ -413,6 +562,9 @@ public partial class Window2 : Window
     private void Nav_EmailManager_Click(object sender, RoutedEventArgs e)
         => OpenModule(ModuleWindowState.CreateEmailManager());
 
+    private void Nav_Data_Click(object sender, RoutedEventArgs e)
+        => OpenDataWorkspace();
+
     private void Nav_Support_Click(object sender, RoutedEventArgs e)
         => OpenSupportWorkspace();
 
@@ -425,8 +577,58 @@ public partial class Window2 : Window
     private void NewContact_Click(object sender, RoutedEventArgs e)
         => OpenContactsWorkspace();
 
+    private void OpenDataWatch_Click(object sender, RoutedEventArgs e)
+        => OpenDataWorkspace();
+
     private void OpenSupportCenter_Click(object sender, RoutedEventArgs e)
         => OpenSupportWorkspace();
+
+    private void AccountsGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        ApplySelectedManagedAccount(AccountsGrid.SelectedItem as ManagedAccountRecord);
+    }
+
+    private async void BanAccount_Click(object sender, RoutedEventArgs e)
+        => await ChangeSelectedAccountAccessAsync(isBanned: true);
+
+    private async void RestoreAccount_Click(object sender, RoutedEventArgs e)
+        => await ChangeSelectedAccountAccessAsync(isBanned: false);
+
+    private async void RefreshAccounts_Click(object sender, RoutedEventArgs e)
+    {
+        await LoadAccountManagementAsync();
+        SetAccountsStatus("Account list refreshed.", SupportNeutralBrush);
+    }
+
+    private async Task ChangeSelectedAccountAccessAsync(bool isBanned)
+    {
+        if (AccountsGrid.SelectedItem is not ManagedAccountRecord selectedAccount)
+        {
+            SetAccountsStatus("Select an account before changing access.", SupportErrorBrush);
+            return;
+        }
+
+        var (success, errorMessage) = await credentialRepository.SetBanStateAsync(selectedAccount.Username, isBanned);
+        if (!success)
+        {
+            SetAccountsStatus(errorMessage, SupportErrorBrush);
+            return;
+        }
+
+        await LoadAccountManagementAsync();
+
+        if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            SetAccountsStatus(errorMessage, SupportNeutralBrush);
+            return;
+        }
+
+        SetAccountsStatus(
+            isBanned
+                ? $"{selectedAccount.DisplayName} has been banned and can no longer sign in."
+                : $"{selectedAccount.DisplayName} can sign in again.",
+            isBanned ? SupportUrgentBrush : SupportSuccessBrush);
+    }
 
     private async void SendSupportMessage_Click(object sender, RoutedEventArgs e)
     {
@@ -695,13 +897,12 @@ public partial class Window2 : Window
     }
     private async Task PersistWorkspaceDataAsync()
     {
-        using var persistTiming = PerformanceInstrumentation.Measure("workspace.persist", ("user", currentUser.Username), ("contacts", contacts.Count), ("contracts", contracts.Count));
-        await workspaceRepository.SaveForUserAsync(currentUser.Username, contacts.ToList(), contracts.ToList());
+        using var persistTiming = PerformanceInstrumentation.Measure("workspace.persist", ("user", currentUser.Username), ("contacts", contacts.Count), ("contracts", contracts.Count), ("outreachCampaigns", GetOutreachCampaignCount()));
+        await workspaceRepository.SaveForUserAsync(currentUser.Username, contacts.ToList(), contracts.ToList(), GetAllOutreachCampaigns());
         persistTiming.Checkpoint("store-saved");
         await LoadWorkspaceDataAsync();
         persistTiming.Checkpoint("workspace-reloaded", ("calendarItems", calendarItems.Count));
     }
-
     private void UpsertContact(ContactRecord contact)
     {
         var existingIndex = contacts
@@ -827,6 +1028,8 @@ public partial class Window2 : Window
             }
         }
 
+        AddOutreachCalendarEvents(existingManagedEvents, desiredEvents);
+
         var desiredIds = desiredEvents
             .Select(item => item.Id)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -951,7 +1154,8 @@ public partial class Window2 : Window
     private int CountUpcomingFollowUps()
     {
         return contacts.Count(contact => IsWithinNextWeek(contact.FollowUpDate))
-            + contracts.Count(contract => IsWithinNextWeek(contract.ReminderDate));
+            + contracts.Count(contract => IsWithinNextWeek(contract.ReminderDate))
+            + CountUpcomingOutreachCampaigns();
     }
 
     private static bool IsWithinNextWeek(DateTime? value)
@@ -1005,6 +1209,12 @@ public partial class Window2 : Window
         {
             target.Add(item);
         }
+    }
+
+    private void SetAccountsStatus(string message, Brush brush)
+    {
+        AccountsStatusText.Text = message;
+        AccountsStatusText.Foreground = brush;
     }
 
     private void SetSupportStatus(string message, Brush brush)
@@ -1086,6 +1296,11 @@ public partial class Window2 : Window
         OpenModule(ModuleWindowState.CreateSupport(currentUser, supportSubmissions));
     }
 
+    private void OpenDataWorkspace()
+    {
+        OpenModule(ModuleWindowState.CreateDataWatch());
+    }
+
     private void OpenCalendarWorkspace()
     {
         WindowManager.ShowOrFocus(
@@ -1105,6 +1320,16 @@ public partial class Window2 : Window
 
 public sealed record PaymentRow(string Date, string Amount, string Method, string Status);
 public sealed record ActivityRow(string Workspace, string Action, string Owner, string Status);
+
+
+
+
+
+
+
+
+
+
 
 
 

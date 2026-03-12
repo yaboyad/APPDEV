@@ -73,7 +73,14 @@ public sealed class WorkspaceRepository
                 .ThenBy(contract => contract.Title)
                 .ToList();
 
-            return new WorkspaceSnapshot(contacts, contracts);
+            var outreachCampaigns = store.OutreachCampaigns
+                .Where(campaign => string.Equals(campaign.OwnerUsername, normalizedUsername, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(campaign => campaign.ScheduledDate)
+                .ThenBy(campaign => campaign.Channel)
+                .ThenBy(campaign => campaign.CampaignName)
+                .ToList();
+
+            return new WorkspaceSnapshot(contacts, contracts, outreachCampaigns);
         }
         finally
         {
@@ -84,21 +91,25 @@ public sealed class WorkspaceRepository
     public void SaveForUser(
         string username,
         IEnumerable<ContactRecord> contacts,
-        IEnumerable<ContractRecord> contracts)
-        => SaveForUserAsync(username, contacts, contracts).GetAwaiter().GetResult();
+        IEnumerable<ContractRecord> contracts,
+        IEnumerable<OutreachCampaignRecord> outreachCampaigns)
+        => SaveForUserAsync(username, contacts, contracts, outreachCampaigns).GetAwaiter().GetResult();
 
     public async Task SaveForUserAsync(
         string username,
         IEnumerable<ContactRecord> contacts,
         IEnumerable<ContractRecord> contracts,
+        IEnumerable<OutreachCampaignRecord> outreachCampaigns,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(contacts);
         ArgumentNullException.ThrowIfNull(contracts);
+        ArgumentNullException.ThrowIfNull(outreachCampaigns);
 
         var normalizedUsername = NormalizeUserKey(username);
         var contactList = contacts.ToList();
         var contractList = contracts.ToList();
+        var outreachCampaignList = outreachCampaigns.ToList();
 
         await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -107,9 +118,11 @@ public sealed class WorkspaceRepository
 
             store.Contacts.RemoveAll(contact => string.Equals(contact.OwnerUsername, normalizedUsername, StringComparison.OrdinalIgnoreCase));
             store.Contracts.RemoveAll(contract => string.Equals(contract.OwnerUsername, normalizedUsername, StringComparison.OrdinalIgnoreCase));
+            store.OutreachCampaigns.RemoveAll(campaign => string.Equals(campaign.OwnerUsername, normalizedUsername, StringComparison.OrdinalIgnoreCase));
 
             store.Contacts.AddRange(contactList.Select(contact => NormalizeContact(contact, normalizedUsername)));
             store.Contracts.AddRange(contractList.Select(contract => NormalizeContract(contract, normalizedUsername)));
+            store.OutreachCampaigns.AddRange(outreachCampaignList.Select(campaign => NormalizeOutreachCampaign(campaign, normalizedUsername)));
 
             await SaveStoreCoreAsync(store, cancellationToken).ConfigureAwait(false);
         }
@@ -186,6 +199,14 @@ public sealed class WorkspaceRepository
             .ThenBy(contract => contract.Title)
             .ToList();
 
+        store.OutreachCampaigns = store.OutreachCampaigns
+            .Select(campaign => NormalizeOutreachCampaign(campaign, NormalizeUserKey(campaign.OwnerUsername)))
+            .OrderBy(campaign => campaign.OwnerUsername)
+            .ThenBy(campaign => campaign.ScheduledDate)
+            .ThenBy(campaign => campaign.Channel)
+            .ThenBy(campaign => campaign.CampaignName)
+            .ToList();
+
         cachedStore = store;
         await RepositoryFileStore.WriteJsonAtomicAsync(StoragePath, store, SerializerOptions, cancellationToken).ConfigureAwait(false);
         isInitialized = true;
@@ -229,6 +250,23 @@ public sealed class WorkspaceRepository
         UpdatedUtc = NormalizeUtc(contract.UpdatedUtc)
     };
 
+    private static OutreachCampaignRecord NormalizeOutreachCampaign(OutreachCampaignRecord campaign, string ownerUsername) => new OutreachCampaignRecord
+    {
+        Id = string.IsNullOrWhiteSpace(campaign.Id) ? Guid.NewGuid().ToString("N") : campaign.Id,
+        OwnerUsername = ownerUsername,
+        Channel = string.IsNullOrWhiteSpace(campaign.Channel) ? "Text" : campaign.Channel.Trim(),
+        CampaignName = campaign.CampaignName.Trim(),
+        Audience = campaign.Audience.Trim(),
+        SubjectLine = campaign.SubjectLine.Trim(),
+        MessageBody = campaign.MessageBody.Trim(),
+        ScheduledDate = (campaign.ScheduledDate == default ? DateTime.Today : campaign.ScheduledDate).Date,
+        SendWindow = string.IsNullOrWhiteSpace(campaign.SendWindow) ? "Morning" : campaign.SendWindow.Trim(),
+        Status = string.IsNullOrWhiteSpace(campaign.Status) ? "Draft" : campaign.Status.Trim(),
+        AutomationEnabled = campaign.AutomationEnabled,
+        Notes = campaign.Notes.Trim(),
+        UpdatedUtc = NormalizeUtc(campaign.UpdatedUtc)
+    };
+
     private static DateTime NormalizeUtc(DateTime value)
     {
         if (value == default)
@@ -250,5 +288,6 @@ public sealed class WorkspaceRepository
     {
         public List<ContactRecord> Contacts { get; set; } = new();
         public List<ContractRecord> Contracts { get; set; } = new();
+        public List<OutreachCampaignRecord> OutreachCampaigns { get; set; } = new();
     }
 }

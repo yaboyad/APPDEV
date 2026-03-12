@@ -312,10 +312,10 @@ public partial class MainWindow : SnapWindow
 
         try
         {
-            var user = await credentials.AuthenticateAsync(UsernameBox.Text, PasswordBox.Password);
+            var (user, errorMessage) = await credentials.AuthenticateWithStatusAsync(UsernameBox.Text, PasswordBox.Password);
             if (user is null)
             {
-                StatusText.Text = "Incorrect email, username, or password.";
+                StatusText.Text = errorMessage;
                 PasswordBox.Clear();
                 PasswordBox.Focus();
                 UiAnimator.Shake(LoginCard);
@@ -401,6 +401,10 @@ public partial class MainWindow : SnapWindow
         Close();
     }
 }
+
+
+
+
 
 
 

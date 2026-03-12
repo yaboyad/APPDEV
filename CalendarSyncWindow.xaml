@@ -76,14 +76,14 @@
                                        Foreground="#0F1720"
                                        FontSize="16"
                                        FontWeight="Bold"
-                                       TextTrimming="CharacterEllipsis"/>
+                                       TextWrapping="Wrap"/>
                             <TextBlock Margin="0,6,0,0"
                                        Text="{Binding TimeLabel}"
-                                       Foreground="#4A6170"/>
+                                       Foreground="#4A6170" TextWrapping="Wrap"/>
                             <TextBlock Margin="0,5,0,0"
                                        Text="{Binding DetailText}"
                                        Foreground="#5F7481"
-                                       TextTrimming="CharacterEllipsis"
+                                       TextWrapping="Wrap"
                                        Visibility="{Binding DetailVisibility}"/>
                             <TextBlock Margin="0,5,0,0"
                                        Text="{Binding DescriptionPreview}"
@@ -102,7 +102,10 @@
                                 <TextBlock Text="{Binding Category}"
                                            Foreground="{Binding AccentForegroundBrush}"
                                            FontSize="12"
-                                           FontWeight="SemiBold"/>
+                                           FontWeight="SemiBold"
+                                           MaxWidth="116"
+                                           TextAlignment="Center"
+                                           TextWrapping="Wrap"/>
                             </Border>
                             <Border Margin="0,10,0,0"
                                     Padding="12,6"
@@ -113,7 +116,10 @@
                                 <TextBlock Text="{Binding SyncTargets}"
                                            Foreground="#5A7180"
                                            FontSize="12"
-                                           FontWeight="SemiBold"/>
+                                           FontWeight="SemiBold"
+                                           MaxWidth="116"
+                                           TextAlignment="Center"
+                                           TextWrapping="Wrap"/>
                             </Border>
                         </StackPanel>
                     </Grid>
@@ -292,7 +298,7 @@
                             <TextBlock Margin="0,18,0,0"
                                        Foreground="#F6FBFD"
                                        FontSize="34"
-                                       FontWeight="Bold"
+                                       FontWeight="Bold" TextWrapping="Wrap"
                                        Text="Manage local CRM events and sync them with Google Calendar and Apple Calendar."/>
                             <TextBlock Margin="0,10,0,0"
                                        Foreground="#B9CED8"
@@ -469,7 +475,7 @@
 
                             <StackPanel>
                                 <TextBlock Text="Start (example: 3/14/2026 2:00 PM)"
-                                           Style="{StaticResource TitanFieldLabelTextStyle}"/>
+                                           Style="{StaticResource TitanFieldLabelTextStyle}" TextWrapping="Wrap"/>
                                 <TextBox x:Name="EventStartBox"
                                          Margin="0,8,12,0"
                                          Style="{StaticResource CalendarReadableTextBoxStyle}"/>
@@ -477,7 +483,7 @@
 
                             <StackPanel Grid.Column="1">
                                 <TextBlock Text="End (example: 3/14/2026 3:00 PM)"
-                                           Style="{StaticResource TitanFieldLabelTextStyle}"/>
+                                           Style="{StaticResource TitanFieldLabelTextStyle}" TextWrapping="Wrap"/>
                                 <TextBox x:Name="EventEndBox"
                                          Margin="0,8,0,0"
                                          Style="{StaticResource CalendarReadableTextBoxStyle}"/>
@@ -573,7 +579,7 @@
                                                Margin="0,8,0,0"
                                                Foreground="#F6FBFD"
                                                FontSize="18"
-                                               FontWeight="Bold"/>
+                                               FontWeight="Bold" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </Border>
 
@@ -592,7 +598,7 @@
                                                Margin="0,8,0,0"
                                                Foreground="#F6FBFD"
                                                FontSize="18"
-                                               FontWeight="Bold"/>
+                                               FontWeight="Bold" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </Border>
 
@@ -611,7 +617,7 @@
                                                Margin="0,8,0,0"
                                                Foreground="#F6FBFD"
                                                FontSize="18"
-                                               FontWeight="Bold"/>
+                                               FontWeight="Bold" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </Border>
 
@@ -630,7 +636,7 @@
                                                Margin="0,8,0,0"
                                                Foreground="#F6FBFD"
                                                FontSize="18"
-                                               FontWeight="Bold"/>
+                                               FontWeight="Bold" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </Border>
                         </UniformGrid>
@@ -660,7 +666,7 @@
                                     <TextBlock Grid.Row="1"
                                                Margin="0,8,0,0"
                                                Text="Browse the full month, then click any day to drill into its agenda."
-                                               Foreground="#617A88"/>
+                                               Foreground="#617A88" TextWrapping="Wrap"/>
 
                                     <Grid Grid.Row="2" Margin="0,18,0,0">
                                         <Grid.RowDefinitions>
@@ -726,7 +732,7 @@
                                                 <TextBlock x:Name="SelectedDayTitleText"
                                                            Foreground="#0F1720"
                                                            FontSize="20"
-                                                           FontWeight="Bold"/>
+                                                           FontWeight="Bold" TextWrapping="Wrap"/>
                                                 <TextBlock x:Name="SelectedDaySubtitleText"
                                                            Margin="0,8,0,0"
                                                            Foreground="#617A88"
@@ -741,14 +747,14 @@
                                                     CornerRadius="999">
                                                 <TextBlock x:Name="SelectedDayCountText"
                                                            Foreground="#49616E"
-                                                           FontWeight="SemiBold"/>
+                                                           FontWeight="SemiBold" TextWrapping="Wrap"/>
                                             </Border>
                                         </Grid>
 
                                         <TextBlock Grid.Row="1"
                                                    Margin="0,14,0,0"
                                                    Text="Click an event card to load it into the editor above."
-                                                   Foreground="#6D8592"/>
+                                                   Foreground="#6D8592" TextWrapping="Wrap"/>
 
                                         <Grid Grid.Row="2" Margin="0,18,0,0">
                                             <TextBlock x:Name="SelectedDayEmptyText"
@@ -812,7 +818,7 @@
                                                     CornerRadius="999">
                                                 <TextBlock x:Name="UpcomingTimelineCountText"
                                                            Foreground="#49616E"
-                                                           FontWeight="SemiBold"/>
+                                                           FontWeight="SemiBold" TextWrapping="Wrap"/>
                                             </Border>
                                         </Grid>
 

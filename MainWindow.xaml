@@ -122,7 +122,10 @@
                                             CornerRadius="2"
                                             Background="#F0B862"/>
                                     <TextBlock Text="Immersive sign-in"
-                                               Style="{StaticResource TitanEyebrowTextStyle}"/>
+                                               Foreground="#8CCFC7"
+                                               FontSize="13"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Grid>
                         </Border>
@@ -748,4 +751,10 @@
         </Grid>
     </Grid>
 </local:SnapWindow>
+
+
+
+
+
+
 
