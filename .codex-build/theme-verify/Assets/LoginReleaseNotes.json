@@ -1,18 +1,5 @@
 ﻿[
   {
-    "version": "v1.4",
-    "title": "Workspace operations expansion",
-    "publishedOn": "March 12, 2026",
-    "summary": "Titan now surfaces today's bigger CRM additions directly from sign-in, including artist lookup, outreach planning, support routing, and smarter focused workspaces.",
-    "highlights": [
-      "A new artist tracker lets you search saved contacts quickly and jump straight into the contact editor.",
-      "Text and email campaigns now save send windows, automation state, and scheduled dates into one outreach tracker.",
-      "The support center now routes user submissions to a master inbox while preserving the role-based experience.",
-      "Focused workspaces now open with live local data for campaigns, artist tracking, support, payments, and account management.",
-      "Dashboard grids now support faster search and filtering for saved accounts, contacts, and contracts."
-    ]
-  },
-  {
     "version": "v1.3",
     "title": "Fullscreen shell refresh",
     "publishedOn": "March 11, 2026",

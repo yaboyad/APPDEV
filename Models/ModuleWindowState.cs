@@ -49,30 +49,88 @@ public sealed class ModuleWindowState
         };
     }
 
-    public static ModuleWindowState CreatePayments() => new()
+    public static ModuleWindowState CreateAccountsManager(IEnumerable<ManagedAccountRecord>? accounts)
     {
-        WindowKey = "payments",
-        Title = "Payments Workspace",
-        Subtitle = "Track recurring billing and recent charges",
-        Highlight = "This window stays separate from the dashboard so payment work does not interrupt the main overview.",
-        Footer = "Next step: connect a real payment source or local database when you are ready.",
-        Column1Header = "Invoice",
-        Column2Header = "Date",
-        Column3Header = "Amount",
-        Column4Header = "Status",
-        Metrics = new[]
+        var accountList = accounts?
+            .OrderByDescending(account => account.IsMaster)
+            .ThenBy(account => account.IsBanned)
+            .ThenBy(account => account.DisplayName, StringComparer.CurrentCultureIgnoreCase)
+            .ToList()
+            ?? new List<ManagedAccountRecord>();
+
+        var blockedCount = accountList.Count(account => account.IsBanned);
+        var activeCount = accountList.Count(account => !account.IsBanned);
+        var protectedCount = accountList.Count(account => account.IsMaster);
+
+        return new ModuleWindowState
         {
-            new ModuleMetric("Current Plan", "Creator Pro", "Monthly cycle"),
-            new ModuleMetric("Next Charge", "$49.00", "Due Mar 18"),
-            new ModuleMetric("Method", "Card", "Ending in 4242")
-        },
-        Rows = new[]
+            WindowKey = "all-accounts",
+            Title = "All Accounts Manager",
+            Subtitle = accountList.Count == 0
+                ? "No saved accounts found in the local credential store"
+                : $"{accountList.Count} account(s) available in the local credential store",
+            Highlight = accountList.Count == 0
+                ? "This workspace is ready, but the local store does not have any saved accounts to manage yet."
+                : blockedCount == 0
+                    ? "Every saved account can currently sign in. Master accounts remain protected from accidental lockouts."
+                    : $"{blockedCount} account(s) are blocked right now. Restore access from the dashboard when they are ready to sign in again.",
+            Footer = "Use the dashboard actions to ban or restore access. This focused window keeps the full account list visible beside the main CRM overview.",
+            Column1Header = "Account",
+            Column2Header = "Username",
+            Column3Header = "Tier",
+            Column4Header = "Access",
+            Metrics = new[]
+            {
+                new ModuleMetric("Accounts", accountList.Count.ToString(CultureInfo.InvariantCulture), blockedCount == 0 ? "No blocked users" : $"{blockedCount} blocked account(s)"),
+                new ModuleMetric("Active", activeCount.ToString(CultureInfo.InvariantCulture), activeCount == 0 ? "No active sign-ins yet" : "Can sign in now"),
+                new ModuleMetric("Protected", protectedCount.ToString(CultureInfo.InvariantCulture), protectedCount == 0 ? "No master accounts detected" : "Master access stays protected")
+            },
+            Rows = accountList
+                .Take(10)
+                .Select(account => new ModuleRow(
+                    OrFallback(account.DisplayName, account.Username),
+                    account.Username,
+                    account.TierLabel,
+                    account.AccessStatus))
+                .ToArray()
+        };
+    }
+
+    public static ModuleWindowState CreatePayments() => CreatePayments(DateTime.Today);
+
+    public static ModuleWindowState CreatePayments(DateTime today)
+    {
+        var nextChargeDate = GetNextPaymentDueDate(today);
+        var recentChargeDates = Enumerable.Range(1, 3)
+            .Select(monthOffset => nextChargeDate.AddMonths(-monthOffset))
+            .ToList();
+
+        return new ModuleWindowState
         {
-            new ModuleRow("INV-1001", "Feb 18", "$49.00", "Paid"),
-            new ModuleRow("INV-1000", "Jan 18", "$49.00", "Paid"),
-            new ModuleRow("INV-0999", "Dec 18", "$49.00", "Paid")
-        }
-    };
+            WindowKey = "payments",
+            Title = "Payments Workspace",
+            Subtitle = $"Recurring billing summary through {nextChargeDate:MMMM yyyy}",
+            Highlight = "This workspace now opens with the same billing cadence shown on the dashboard so payment review stays in sync with the rest of the CRM.",
+            Footer = "Use this focused window to review recent charges while the dashboard stays anchored on contacts, campaigns, data watch, and support.",
+            Column1Header = "Date",
+            Column2Header = "Amount",
+            Column3Header = "Method",
+            Column4Header = "Status",
+            Metrics = new[]
+            {
+                new ModuleMetric("Current Plan", "Creator Pro", "Monthly cycle"),
+                new ModuleMetric("Next Charge", "$49.00", $"Due {nextChargeDate:MMM dd, yyyy}"),
+                new ModuleMetric("Recent Charges", recentChargeDates.Count.ToString(CultureInfo.InvariantCulture), $"Latest {recentChargeDates.FirstOrDefault():MMM dd}")
+            },
+            Rows = recentChargeDates
+                .Select(chargeDate => new ModuleRow(
+                    chargeDate.ToString("MMM dd, yyyy", CultureInfo.CurrentCulture),
+                    "$49.00",
+                    "Card",
+                    "Paid"))
+                .ToArray()
+        };
+    }
 
     public static ModuleWindowState CreateContracts() => CreateContracts(null);
 
@@ -201,32 +259,25 @@ public sealed class ModuleWindowState
         };
     }
 
-    public static ModuleWindowState CreateSmsManager() => CreateContacts();
+    public static ModuleWindowState CreateSmsManager() => CreateSmsManager(null);
 
-    public static ModuleWindowState CreateEmailManager() => new()
-    {
-        WindowKey = "email",
-        Title = "Email Manager",
-        Subtitle = "Templates, scheduling, and send history",
-        Highlight = "Email lives in its own workspace so you can build campaigns while the main dashboard remains anchored.",
-        Footer = "Next step: add SMTP or API delivery and persist send history locally.",
-        Column1Header = "Template",
-        Column2Header = "Subject",
-        Column3Header = "Last Updated",
-        Column4Header = "Status",
-        Metrics = new[]
-        {
-            new ModuleMetric("Drafts", "4", "Editable now"),
-            new ModuleMetric("Scheduled", "1", "Next send tomorrow"),
-            new ModuleMetric("History", "12", "Tracked locally")
-        },
-        Rows = new[]
-        {
-            new ModuleRow("Welcome", "Welcome to Titan", "Mar 08", "Active"),
-            new ModuleRow("Release Push", "Your release checklist", "Mar 06", "Scheduled"),
-            new ModuleRow("Invoice Notice", "Payment due reminder", "Mar 02", "Active")
-        }
-    };
+    public static ModuleWindowState CreateSmsManager(IEnumerable<OutreachCampaignRecord>? campaigns)
+        => CreateCampaignWorkspace(
+            windowKey: "text-campaigns",
+            title: "Text Campaigns Workspace",
+            channel: "Text",
+            campaigns: campaigns,
+            includeSubjectLine: false);
+
+    public static ModuleWindowState CreateEmailManager() => CreateEmailManager(null);
+
+    public static ModuleWindowState CreateEmailManager(IEnumerable<OutreachCampaignRecord>? campaigns)
+        => CreateCampaignWorkspace(
+            windowKey: "email-campaigns",
+            title: "Email Campaigns Workspace",
+            channel: "Email",
+            campaigns: campaigns,
+            includeSubjectLine: true);
 
     public static ModuleWindowState CreateDataWatch()
     {
@@ -260,6 +311,50 @@ public sealed class ModuleWindowState
         };
     }
 
+    public static ModuleWindowState CreateDataWatch(IEnumerable<ContactRecord>? contacts)
+    {
+        var contactList = contacts?
+            .OrderBy(contact => contact.FollowUpDate ?? DateTime.MaxValue)
+            .ThenBy(contact => contact.FullName)
+            .ThenBy(contact => contact.Company)
+            .ToList()
+            ?? new List<ContactRecord>();
+
+        var followUpCount = contactList.Count(contact => contact.FollowUpDate.HasValue && IsWithinNextDays(contact.FollowUpDate.Value, 7));
+        var reachableCount = contactList.Count(HasContactMethod);
+        var notedCount = contactList.Count(contact => !string.IsNullOrWhiteSpace(contact.Notes));
+
+        return new ModuleWindowState
+        {
+            WindowKey = "data-watch",
+            Title = "Artist Tracker",
+            Subtitle = contactList.Count == 0
+                ? "No saved artists in contacts yet"
+                : $"{contactList.Count} contact record(s) ready for artist lookup",
+            Highlight = contactList.Count == 0
+                ? "Save an artist in Contacts and the tracker will surface them here for quick review."
+                : "This focused tracker mirrors your saved contacts so you can scan artist names, follow-ups, and reachability without hunting through the full dashboard.",
+            Footer = "Use the dashboard artist tracker or contacts editor to update records. This workspace reflects the same local contact store.",
+            Column1Header = "Artist",
+            Column2Header = "Company",
+            Column3Header = "Follow-up",
+            Column4Header = "Reach",
+            Metrics = new[]
+            {
+                new ModuleMetric("Tracked", contactList.Count.ToString(CultureInfo.InvariantCulture), notedCount == 0 ? "No notes saved yet" : $"{notedCount} record(s) with notes"),
+                new ModuleMetric("Due soon", followUpCount.ToString(CultureInfo.InvariantCulture), followUpCount == 0 ? "Nothing due this week" : "Follow-up within 7 days"),
+                new ModuleMetric("Reachable", reachableCount.ToString(CultureInfo.InvariantCulture), "Phone or email on file")
+            },
+            Rows = contactList
+                .Take(10)
+                .Select(contact => new ModuleRow(
+                    OrFallback(contact.FullName, "Unnamed contact"),
+                    OrFallback(contact.Company, "Independent"),
+                    contact.FollowUpDate?.ToString("MMM dd", CultureInfo.CurrentCulture) ?? "Not scheduled",
+                    GetReachLabel(contact)))
+                .ToArray()
+        };
+    }
     public static IReadOnlyList<SocialPlatformRow> CreateDataWatchRows() => new[]
     {
         new SocialPlatformRow("Instagram Graph API", "Follower growth + saves", "Reels reach + profile taps", "15 min cadence", "Ready to connect"),
@@ -271,50 +366,89 @@ public sealed class ModuleWindowState
         new SocialPlatformRow("Bandsintown API", "Event follows + RSVPs", "City-by-city demand", "Daily sweep", "Ready to connect")
     };
 
-    public static ModuleWindowState CreateSupport(AuthenticatedUser user) => CreateSupport(user, null);
+    public static ModuleWindowState CreateSupport(AuthenticatedUser user) => CreateSupport(user, null, null);
 
     public static ModuleWindowState CreateSupport(AuthenticatedUser user, IEnumerable<SupportSubmissionRecord>? submissions)
+        => CreateSupport(user, submissions, null);
+
+    public static ModuleWindowState CreateSupport(
+        AuthenticatedUser user,
+        IEnumerable<SupportSubmissionRecord>? submissions,
+        IEnumerable<SupportMessageRow>? conversation)
     {
+        if (!user.IsMaster)
+        {
+            var conversationList = conversation?
+                .OrderByDescending(message => message.CreatedAt)
+                .ToList()
+                ?? new List<SupportMessageRow>();
+
+            var urgentCount = conversationList.Count(message => message.IsUrgent && message.IsFromUser);
+            var latestMessage = conversationList.FirstOrDefault();
+
+            return new ModuleWindowState
+            {
+                WindowKey = "support",
+                Title = "Support Workspace",
+                Subtitle = conversationList.Count == 0
+                    ? "Start a support conversation from the dashboard"
+                    : $"{conversationList.Count} saved message(s) in your Titan thread",
+                Highlight = latestMessage is null
+                    ? "Open the dashboard support center to start a threaded support conversation. Messages and Titan replies will persist locally for this account."
+                    : $"Latest thread update from {latestMessage.SenderName}: {CreateSupportPreview(latestMessage.Body)}",
+                Footer = "This workspace mirrors the same local support transcript shown on the dashboard while each user message still routes to the master inbox.",
+                Column1Header = "Sender",
+                Column2Header = "Lane",
+                Column3Header = "Received",
+                Column4Header = "Preview",
+                Metrics = new[]
+                {
+                    new ModuleMetric("Access", "Threaded", "Titan replies stay in one transcript"),
+                    new ModuleMetric("Saved", conversationList.Count.ToString(CultureInfo.InvariantCulture), conversationList.Count == 0 ? "Ready for the first message" : "Stored locally"),
+                    new ModuleMetric("Urgent", urgentCount.ToString(CultureInfo.InvariantCulture), urgentCount == 0 ? "No priority items flagged" : "Priority support triggered")
+                },
+                Rows = conversationList
+                    .Take(8)
+                    .Select(message => new ModuleRow(
+                        OrFallback(message.SenderName, message.IsFromUser ? "You" : "Titan Support"),
+                        OrFallback(message.Channel, "General"),
+                        message.CreatedAt.ToString("MMM dd, h:mm tt", CultureInfo.CurrentCulture),
+                        CreateSupportPreview(message.Body)))
+                    .ToArray()
+            };
+        }
+
         var submissionList = submissions?
             .OrderByDescending(submission => submission.CreatedAt)
             .ToList()
             ?? new List<SupportSubmissionRecord>();
 
-        var urgentCount = submissionList.Count(submission => submission.IsUrgent);
+        var urgentSubmissionCount = submissionList.Count(submission => submission.IsUrgent);
         var latestSubmission = submissionList.FirstOrDefault();
-        var accessLabel = user.IsMaster ? "Master inbox" : "Submit only";
 
         return new ModuleWindowState
         {
             WindowKey = "support",
             Title = "Support Workspace",
-            Subtitle = user.IsMaster
-                ? "Review saved support requests across every account"
-                : "Track the support requests saved for this account",
+            Subtitle = "Review saved support requests across every account",
             Highlight = latestSubmission is null
-                ? user.IsMaster
-                    ? "The master inbox is clear right now. This page now opens correctly and will populate as soon as users submit requests."
-                    : "No support requests have been saved for this account yet. This page now opens correctly and is ready for your next submission."
-                : user.IsMaster
-                    ? $"Latest request: {latestSubmission.Channel} from {latestSubmission.SubmittedByLabel} at {latestSubmission.CreatedAt:MMM dd, h:mm tt}."
-                    : $"Latest request saved to the master inbox: {latestSubmission.Channel} at {latestSubmission.CreatedAt:MMM dd, h:mm tt}.",
-            Footer = user.IsMaster
-                ? "Master accounts can review every saved submission here while users continue sending requests from their dashboard."
-                : "Send requests from the dashboard composer. This focused window now opens reliably and summarizes what has already been saved.",
-            Column1Header = user.IsMaster ? "Account" : "Sender",
+                ? "The master inbox is clear right now. This workspace will populate as soon as users submit new requests."
+                : $"Latest request: {latestSubmission.Channel} from {latestSubmission.SubmittedByLabel} at {latestSubmission.CreatedAt:MMM dd, h:mm tt}.",
+            Footer = "Master accounts can review every saved submission here while users continue sending requests from their dashboard.",
+            Column1Header = "Account",
             Column2Header = "Lane",
             Column3Header = "Received",
             Column4Header = "Priority",
             Metrics = new[]
             {
-                new ModuleMetric("Access", accessLabel, user.IsMaster ? "All accounts visible" : "Reviewed by master"),
+                new ModuleMetric("Access", "Master inbox", "All accounts visible"),
                 new ModuleMetric("Saved", submissionList.Count.ToString(CultureInfo.InvariantCulture), submissionList.Count == 0 ? "Inbox clear" : "Stored locally"),
-                new ModuleMetric("Urgent", urgentCount.ToString(CultureInfo.InvariantCulture), urgentCount == 0 ? "No urgent requests" : "Needs quick attention")
+                new ModuleMetric("Urgent", urgentSubmissionCount.ToString(CultureInfo.InvariantCulture), urgentSubmissionCount == 0 ? "No urgent requests" : "Needs quick attention")
             },
             Rows = submissionList
                 .Take(8)
                 .Select(submission => new ModuleRow(
-                    user.IsMaster ? submission.SubmittedByLabel : "You",
+                    submission.SubmittedByLabel,
                     OrFallback(submission.Channel, "General"),
                     submission.CreatedAt.ToString("MMM dd, h:mm tt", CultureInfo.CurrentCulture),
                     submission.PriorityLabel))
@@ -379,8 +513,104 @@ public sealed class ModuleWindowState
         || string.Equals(status, "Pending", StringComparison.OrdinalIgnoreCase)
         || string.Equals(status, "Expiring", StringComparison.OrdinalIgnoreCase);
 
+    private static ModuleWindowState CreateCampaignWorkspace(
+        string windowKey,
+        string title,
+        string channel,
+        IEnumerable<OutreachCampaignRecord>? campaigns,
+        bool includeSubjectLine)
+    {
+        var campaignList = campaigns?
+            .Where(campaign => string.Equals(campaign.Channel, channel, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(campaign => campaign.ScheduledDate)
+            .ThenBy(campaign => campaign.CampaignName)
+            .ToList()
+            ?? new List<OutreachCampaignRecord>();
+
+        var scheduledCount = campaignList.Count(campaign => !IsSentCampaignStatus(campaign.Status));
+        var automatedCount = campaignList.Count(campaign => campaign.AutomationEnabled);
+        var nextCampaign = campaignList
+            .Where(campaign => !IsSentCampaignStatus(campaign.Status))
+            .OrderBy(campaign => campaign.ScheduledDate)
+            .ThenBy(campaign => campaign.CampaignName)
+            .FirstOrDefault();
+        var channelLabel = channel.ToLowerInvariant();
+
+        return new ModuleWindowState
+        {
+            WindowKey = windowKey,
+            Title = title,
+            Subtitle = campaignList.Count == 0
+                ? $"No {channelLabel} campaigns saved yet"
+                : $"{campaignList.Count} {channelLabel} campaign(s) saved in the local workspace",
+            Highlight = campaignList.Count == 0
+                ? $"This workspace now opens correctly. Save a {channelLabel} campaign on the dashboard and it will appear here with its send window and automation state."
+                : nextCampaign is null
+                    ? $"Every saved {channelLabel} campaign is already marked Sent, so this workspace is acting as the recent history view."
+                    : $"The next {channelLabel} send is {nextCampaign.CampaignName} on {nextCampaign.ScheduledDate:MMM dd} during the {nextCampaign.SendWindow.ToLowerInvariant()} window.",
+            Footer = $"Use the dashboard editor to create or update {channelLabel} campaigns. This focused window now launches reliably and reflects the current local send plan.",
+            Column1Header = "Campaign",
+            Column2Header = includeSubjectLine ? "Audience / Subject" : "Audience",
+            Column3Header = "Scheduled",
+            Column4Header = "Status",
+            Metrics = new[]
+            {
+                new ModuleMetric("Saved", campaignList.Count.ToString(CultureInfo.InvariantCulture), campaignList.Count == 0 ? "No campaigns yet" : "Stored locally"),
+                new ModuleMetric("Scheduled", scheduledCount.ToString(CultureInfo.InvariantCulture), scheduledCount == 0 ? "Nothing queued" : "Not marked Sent"),
+                new ModuleMetric("Automated", automatedCount.ToString(CultureInfo.InvariantCulture), automatedCount == 0 ? "Manual sends only" : "Automation enabled")
+            },
+            Rows = campaignList
+                .Take(8)
+                .Select(campaign => new ModuleRow(
+                    OrFallback(campaign.CampaignName, $"{channel} campaign"),
+                    BuildCampaignContext(campaign, includeSubjectLine),
+                    $"{campaign.ScheduledDate:MMM dd, yyyy} | {OrFallback(campaign.SendWindow, "Morning")}",
+                    BuildCampaignStatus(campaign)))
+                .ToArray()
+        };
+    }
+
+    private static string BuildCampaignContext(OutreachCampaignRecord campaign, bool includeSubjectLine)
+    {
+        var audience = OrFallback(campaign.Audience, "Open audience");
+        if (!includeSubjectLine)
+        {
+            return audience;
+        }
+
+        var subject = OrFallback(campaign.SubjectLine, "No subject");
+        return $"{audience} | {subject}";
+    }
+
+    private static string BuildCampaignStatus(OutreachCampaignRecord campaign)
+        => $"{OrFallback(campaign.Status, "Draft")} | {(campaign.AutomationEnabled ? "Auto" : "Manual")}";
+
+    private static bool IsSentCampaignStatus(string status)
+        => string.Equals(status, "Sent", StringComparison.OrdinalIgnoreCase);
+
+    private static DateTime GetNextPaymentDueDate(DateTime anchor)
+    {
+        var dueDate = new DateTime(anchor.Year, anchor.Month, Math.Min(18, DateTime.DaysInMonth(anchor.Year, anchor.Month)));
+        if (anchor.Date > dueDate.Date)
+        {
+            var nextMonth = anchor.AddMonths(1);
+            dueDate = new DateTime(nextMonth.Year, nextMonth.Month, Math.Min(18, DateTime.DaysInMonth(nextMonth.Year, nextMonth.Month)));
+        }
+
+        return dueDate;
+    }
     private static bool IsWithinNextDays(DateTime value, int days)
         => value.Date >= DateTime.Today && value.Date <= DateTime.Today.AddDays(days);
+
+    private static string CreateSupportPreview(string body)
+    {
+        var flattened = string.Join(" ", OrFallback(body, "No message")
+            .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries));
+
+        return flattened.Length <= 58
+            ? flattened
+            : flattened[..55] + "...";
+    }
 
     private static string OrFallback(string value, string fallback)
         => string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();

@@ -11,6 +11,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Page Remove="Window2.clean2.xaml" />
+    <None Include="Window2.clean2.xaml" />
     <None Update="Assets\LoginReleaseNotes.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

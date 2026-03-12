@@ -279,7 +279,7 @@ public partial class MainWindow : SnapWindow
         AuthTitleText.Text = signUpMode ? "Create Test Account" : "Open Workspace";
         AuthDescriptionText.Text = signUpMode
             ? "Capture first name, last name, phone, email, and password in the same protected local store while you validate the flow before SQL is wired in. New signups are created as User tier accounts by default."
-            : "Sign in with your local account to open the Titan dashboard, launch focused workspace windows, and use the role-based support experience without losing your place.";
+            : "Sign in with your local account to open the Titan dashboard, review artist tracking, plan text and email outreach, launch focused workspace windows, and use the role-based support experience without losing your place.";
 
         StatusText.Text = string.Empty;
         SignUpStatusText.Text = string.Empty;
@@ -401,10 +401,4 @@ public partial class MainWindow : SnapWindow
         Close();
     }
 }
-
-
-
-
-
-
 

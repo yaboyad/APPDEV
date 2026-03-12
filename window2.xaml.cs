@@ -28,7 +28,9 @@ public partial class Window2 : Window
     private readonly WorkspaceRepository workspaceRepository;
     private readonly CalendarRepository calendarRepository;
     private readonly SupportSubmissionRepository supportSubmissionRepository;
+    private readonly SupportConversationRepository supportConversationRepository;
     private readonly ObservableCollection<SupportSubmissionRecord> supportSubmissions = new ObservableCollection<SupportSubmissionRecord>();
+    private readonly ObservableCollection<SupportMessageRow> supportConversationMessages = new ObservableCollection<SupportMessageRow>();
     private readonly ObservableCollection<ManagedAccountRecord> managedAccounts = new ObservableCollection<ManagedAccountRecord>();
     private readonly ObservableCollection<ContactRecord> contacts = new ObservableCollection<ContactRecord>();
     private readonly ObservableCollection<ContractRecord> contracts = new ObservableCollection<ContractRecord>();
@@ -42,12 +44,24 @@ public partial class Window2 : Window
     private bool isRefreshingDashboard;
 
     public Window2()
-        : this(new AuthenticatedUser("Admin", "Admin", AccountTier: AccountTiers.Master), App.Credentials, App.WorkspaceData, App.CalendarEvents, new SupportSubmissionRepository())
+        : this(
+            new AuthenticatedUser("Admin", "Admin", AccountTier: AccountTiers.Master),
+            App.Credentials,
+            App.WorkspaceData,
+            App.CalendarEvents,
+            new SupportSubmissionRepository(),
+            new SupportConversationRepository())
     {
     }
 
     public Window2(AuthenticatedUser currentUser)
-        : this(currentUser, App.Credentials, App.WorkspaceData, App.CalendarEvents, new SupportSubmissionRepository())
+        : this(
+            currentUser,
+            App.Credentials,
+            App.WorkspaceData,
+            App.CalendarEvents,
+            new SupportSubmissionRepository(),
+            new SupportConversationRepository())
     {
     }
 
@@ -56,7 +70,8 @@ public partial class Window2 : Window
         CredentialRepository credentialRepository,
         WorkspaceRepository workspaceRepository,
         CalendarRepository calendarRepository,
-        SupportSubmissionRepository supportSubmissionRepository)
+        SupportSubmissionRepository supportSubmissionRepository,
+        SupportConversationRepository supportConversationRepository)
     {
         using var initTiming = PerformanceInstrumentation.Measure("dashboard.window-init", ("user", currentUser.Username), ("tier", currentUser.TierLabel));
         this.currentUser = currentUser;
@@ -64,19 +79,20 @@ public partial class Window2 : Window
         this.workspaceRepository = workspaceRepository;
         this.calendarRepository = calendarRepository;
         this.supportSubmissionRepository = supportSubmissionRepository;
+        this.supportConversationRepository = supportConversationRepository;
 
         InitializeComponent();
         InitializeThemeState();
         InitializeInteractiveStates();
 
         SupportSubmissionsGrid.ItemsSource = supportSubmissions;
-        AccountsGrid.ItemsSource = managedAccounts;
-        ContactsGrid.ItemsSource = contacts;
-        ContractsGrid.ItemsSource = contracts;
+        SupportConversationList.ItemsSource = supportConversationMessages;
+        InitializeGridFilters();
         CalendarGrid.ItemsSource = calendarItems;
         DataWatchGrid.ItemsSource = dataWatchRows;
         ActivityGrid.ItemsSource = activityRows;
         InitializeOutreachUi();
+        InitializeArtistTrackerUi();
         SetSupportStatus("Support center ready.", SupportNeutralBrush);
         SetContactStatus("Add a contact or select one below to edit it.", SupportNeutralBrush);
         SetContractStatus("Add a contract or select one below to edit it.", SupportNeutralBrush);
@@ -256,7 +272,7 @@ public partial class Window2 : Window
             return;
         }
 
-        SetAccountsStatus("Select an account to review or change access.", SupportNeutralBrush);
+        SetAccountsStatus("Select an account to review its access, then ban or restore it here.", SupportNeutralBrush);
         AccountsStorePathText.Text = credentialRepository.StoragePath;
         ApplySelectedManagedAccount(null);
     }
@@ -274,12 +290,13 @@ public partial class Window2 : Window
             return;
         }
 
-        SupportIntroText.Text = "User accounts can submit support requests here. Only the master account can review saved submissions.";
+        SupportIntroText.Text = "User accounts can chat with Titan here while each message still routes to the master support inbox.";
         UserSupportFormPanel.Visibility = Visibility.Visible;
         UserSupportSidebarPanel.Visibility = Visibility.Visible;
         MasterSupportInboxPanel.Visibility = Visibility.Collapsed;
         MasterSupportSidebarPanel.Visibility = Visibility.Collapsed;
-        SetSupportStatus("Support request form ready.", SupportNeutralBrush);
+        LoadSupportConversation();
+        SetSupportStatus("Support thread ready.", SupportNeutralBrush);
     }
 
     private async Task LoadDashboardDataAsync()
@@ -299,12 +316,15 @@ public partial class Window2 : Window
         loadTiming.Checkpoint("snapshot-loaded", ("contacts", snapshot.Contacts.Count), ("contracts", snapshot.Contracts.Count));
         ReplaceCollection(contacts, snapshot.Contacts);
         ReplaceCollection(contracts, snapshot.Contracts);
+        contactsView?.Refresh();
+        contractsView?.Refresh();
         ApplyOutreachCampaigns(snapshot.OutreachCampaigns);
         await SyncWorkspaceCalendarEventsAsync();
         loadTiming.Checkpoint("calendar-synced");
         await RefreshCalendarGridAsync();
         RefreshDashboardSummary();
         RefreshStorageSummary();
+        RefreshArtistTracker();
         await RefreshActivityGridAsync();
         loadTiming.Checkpoint("ui-refreshed", ("calendarItems", calendarItems.Count));
     }
@@ -334,8 +354,8 @@ public partial class Window2 : Window
         var latestContract = contracts.OrderByDescending(contract => contract.UpdatedUtc).FirstOrDefault();
         var latestSupportSubmission = supportSubmissions.FirstOrDefault();
         var nextCalendarEvent = calendarItems.FirstOrDefault();
-        var dataSources = ModuleWindowState.CreateDataWatchRows();
-        var readyDataSources = dataSources.Count(source => source.Status.StartsWith("Ready", StringComparison.OrdinalIgnoreCase));
+        var artistCount = contacts.Count;
+        var dueSoonArtistCount = contacts.Count(contact => IsWithinNextWeek(contact.FollowUpDate));
         var syncedEvents = await calendarRepository.GetUpcomingEventsAsync(12);
         var calendarStatus = syncedEvents.Any(item =>
             !string.IsNullOrWhiteSpace(item.GoogleEventId) ||
@@ -343,7 +363,7 @@ public partial class Window2 : Window
             ? "Synced"
             : "Local";
         var supportAction = latestSupportSubmission is null
-            ? currentUser.IsMaster ? "Master inbox is clear" : "Support form is ready"
+            ? currentUser.IsMaster ? "Master inbox is clear" : "Support thread is ready"
             : currentUser.IsMaster
                 ? $"{latestSupportSubmission.Channel} request from {latestSupportSubmission.SubmittedByLabel}"
                 : $"{latestSupportSubmission.Channel} request submitted";
@@ -368,10 +388,10 @@ public partial class Window2 : Window
                 currentUser.DisplayName,
                 calendarStatus),
             new ActivityRow(
-                "Data watch",
-                $"{dataSources.Count} source(s) lined up for audience and reach checks",
-                "Shared watchlist",
-                readyDataSources == dataSources.Count ? "Ready" : $"{readyDataSources} ready"),
+                "Artist tracker",
+                artistCount == 0 ? "No artists saved in contacts yet" : $"{artistCount} contact record(s) searchable",
+                "Local contacts",
+                dueSoonArtistCount == 0 ? "Ready" : $"{dueSoonArtistCount} follow-up(s) due"),
             new ActivityRow(
                 "Support",
                 supportAction,
@@ -416,6 +436,11 @@ public partial class Window2 : Window
             }
         }
 
+        else
+        {
+            LoadSupportConversation();
+        }
+
         UpdateSupportSummary();
         await RefreshActivityGridAsync();
         loadTiming.Checkpoint("support-ready", ("submissions", supportSubmissions.Count));
@@ -458,6 +483,48 @@ public partial class Window2 : Window
         SelectedSupportSubmissionBodyText.Text = submission.Body;
     }
 
+    private void LoadSupportConversation()
+    {
+        if (currentUser.IsMaster)
+        {
+            ReplaceCollection(supportConversationMessages, Array.Empty<SupportMessageRow>());
+            return;
+        }
+
+        ReplaceCollection(supportConversationMessages, supportConversationRepository.LoadConversation(currentUser));
+        UpdateUserSupportConversationSummary();
+        ScrollSupportConversationToLatest();
+    }
+
+    private void UpdateUserSupportConversationSummary()
+    {
+        if (currentUser.IsMaster)
+        {
+            return;
+        }
+
+        var latestMessage = supportConversationMessages.LastOrDefault();
+        SupportConversationCountText.Text = supportConversationMessages.Count == 1
+            ? "1 saved message"
+            : $"{supportConversationMessages.Count} saved messages";
+        SupportConversationMetaText.Text = latestMessage is null
+            ? "Start a message below. Titan will reply instantly and keep the transcript on this device."
+            : $"{latestMessage.Channel} lane updated {latestMessage.CreatedAt:MMM dd, h:mm tt}. Transcript reloads automatically the next time you sign in.";
+    }
+
+    private void ScrollSupportConversationToLatest()
+    {
+        if (currentUser.IsMaster || supportConversationMessages.Count == 0)
+        {
+            return;
+        }
+
+        _ = Dispatcher.InvokeAsync(() =>
+        {
+            SupportConversationScrollViewer.ScrollToEnd();
+        }, DispatcherPriority.Background);
+    }
+
     private async Task LoadAccountManagementAsync()
     {
         if (!currentUser.IsMaster)
@@ -476,11 +543,18 @@ public partial class Window2 : Window
 
         var accounts = await credentialRepository.GetManagedAccountsAsync();
         ReplaceCollection(managedAccounts, accounts);
+        managedAccountsView?.Refresh();
         UpdateAccountManagementSummary();
 
         var selectedRecord = managedAccounts.FirstOrDefault(account =>
-                                string.Equals(account.Username, preservedUsername, StringComparison.OrdinalIgnoreCase))
-                            ?? managedAccounts.FirstOrDefault();
+                                string.Equals(account.Username, preservedUsername, StringComparison.OrdinalIgnoreCase));
+
+        if (selectedRecord is not null && !IsItemVisible(managedAccountsView, selectedRecord))
+        {
+            selectedRecord = null;
+        }
+
+        selectedRecord ??= GetFirstVisibleItem<ManagedAccountRecord>(managedAccountsView);
 
         AccountsGrid.SelectedItem = selectedRecord;
         ApplySelectedManagedAccount(selectedRecord);
@@ -493,10 +567,10 @@ public partial class Window2 : Window
             return;
         }
 
-        ManagedAccountsCountText.Text = managedAccounts.Count.ToString(CultureInfo.InvariantCulture);
-        ActiveAccountsCountText.Text = managedAccounts.Count(account => !account.IsBanned).ToString(CultureInfo.InvariantCulture);
-        BannedAccountsCountText.Text = managedAccounts.Count(account => account.IsBanned).ToString(CultureInfo.InvariantCulture);
-        ProtectedAccountsCountText.Text = managedAccounts.Count(account => account.IsMaster).ToString(CultureInfo.InvariantCulture);
+        ManagedAccountsCountText.Text = $"Accounts on this device: {managedAccounts.Count.ToString(CultureInfo.InvariantCulture)}";
+        ActiveAccountsCountText.Text = $"Active sign-ins: {managedAccounts.Count(account => !account.IsBanned).ToString(CultureInfo.InvariantCulture)}";
+        BannedAccountsCountText.Text = $"Blocked accounts: {managedAccounts.Count(account => account.IsBanned).ToString(CultureInfo.InvariantCulture)}";
+        ProtectedAccountsCountText.Text = $"Protected master accounts: {managedAccounts.Count(account => account.IsMaster).ToString(CultureInfo.InvariantCulture)}";
         AccountsStorePathText.Text = credentialRepository.StoragePath;
     }
 
@@ -505,8 +579,8 @@ public partial class Window2 : Window
         if (account is null)
         {
             SelectedAccountNameText.Text = "No account selected";
-            SelectedAccountMetaText.Text = "Select an account to review its tier and access state.";
-            SelectedAccountAccessText.Text = "Waiting for selection";
+            SelectedAccountMetaText.Text = "Pick an account from the list to review its username, tier, and contact details.";
+            SelectedAccountAccessText.Text = "Choose an account";
             SelectedAccountAccessText.Foreground = SupportNeutralBrush;
             SelectedAccountNotesText.Text = "User accounts can be banned or restored here. Master accounts stay protected to avoid lockouts.";
             BanAccountButton.IsEnabled = false;
@@ -516,8 +590,8 @@ public partial class Window2 : Window
 
         selectedManagedAccountUsername = account.Username;
         SelectedAccountNameText.Text = account.DisplayName;
-        SelectedAccountMetaText.Text = $"{account.Username} | {account.TierLabel} | {account.ContactLabel}";
-        SelectedAccountAccessText.Text = account.AccessStatus;
+        SelectedAccountMetaText.Text = $"Username: {account.Username}{Environment.NewLine}Tier: {account.TierLabel}{Environment.NewLine}Contact: {account.ContactLabel}";
+        SelectedAccountAccessText.Text = $"Access: {account.AccessStatus}";
         SelectedAccountAccessText.Foreground = account.IsMaster
             ? SupportNeutralBrush
             : account.IsBanned
@@ -544,23 +618,26 @@ public partial class Window2 : Window
             return;
         }
 
-        FocusSection(AccountsGrid);
+        OpenAccountsWorkspace();
     }
 
     private void Nav_Payments_Click(object sender, RoutedEventArgs e)
-        => OpenModule(ModuleWindowState.CreatePayments());
+        => OpenPaymentsWorkspace();
 
     private void Nav_Contracts_Click(object sender, RoutedEventArgs e)
         => OpenContractsWorkspace();
 
     private void Nav_Calendar_Click(object sender, RoutedEventArgs e)
+        => FocusSection(CalendarSection);
+
+    private void OpenCalendarSyncCenter_Click(object sender, RoutedEventArgs e)
         => OpenCalendarWorkspace();
 
     private void Nav_SMSManager_Click(object sender, RoutedEventArgs e)
-        => OpenContactsWorkspace();
+        => OpenTextCampaignsWorkspace();
 
     private void Nav_EmailManager_Click(object sender, RoutedEventArgs e)
-        => OpenModule(ModuleWindowState.CreateEmailManager());
+        => OpenEmailCampaignsWorkspace();
 
     private void Nav_Data_Click(object sender, RoutedEventArgs e)
         => OpenDataWorkspace();
@@ -569,7 +646,7 @@ public partial class Window2 : Window
         => OpenSupportWorkspace();
 
     private void AddPayment_Click(object sender, RoutedEventArgs e)
-        => OpenModule(ModuleWindowState.CreatePayments());
+        => OpenPaymentsWorkspace();
 
     private void CreateContract_Click(object sender, RoutedEventArgs e)
         => OpenContractsWorkspace();
@@ -648,15 +725,38 @@ public partial class Window2 : Window
             return;
         }
 
-        var submission = await supportSubmissionRepository.SubmitAsync(currentUser, messageText);
-        saveTiming.Checkpoint("submission-persisted", ("channel", submission.Channel), ("urgent", submission.IsUrgent));
+        try
+        {
+            var submission = await supportSubmissionRepository.SubmitAsync(currentUser, messageText);
+            saveTiming.Checkpoint("submission-persisted", ("channel", submission.Channel), ("urgent", submission.IsUrgent));
 
-        SupportComposerTextBox.Clear();
-        await LoadSupportDataAsync();
-        saveTiming.Checkpoint("dashboard-refreshed", ("submissions", supportSubmissions.Count));
+            var conversation = supportConversationMessages
+                .Concat(new[]
+                {
+                    supportConversationRepository.CreateUserMessage(currentUser, messageText),
+                    supportConversationRepository.CreateAutomatedReply(currentUser, messageText)
+                })
+                .OrderBy(message => message.CreatedAt)
+                .ToList();
 
-        var statusBrush = submission.IsUrgent ? SupportUrgentBrush : SupportSuccessBrush;
-        SetSupportStatus($"Support request submitted to the master inbox in {submission.Channel}.", statusBrush);
+            supportConversationRepository.SaveConversation(currentUser, conversation);
+            ReplaceCollection(supportConversationMessages, conversation);
+            UpdateUserSupportConversationSummary();
+            ScrollSupportConversationToLatest();
+            saveTiming.Checkpoint("conversation-persisted", ("messages", supportConversationMessages.Count));
+
+            SupportComposerTextBox.Clear();
+            await LoadSupportDataAsync();
+            saveTiming.Checkpoint("dashboard-refreshed", ("submissions", supportSubmissions.Count));
+
+            var statusBrush = submission.IsUrgent ? SupportUrgentBrush : SupportSuccessBrush;
+            SetSupportStatus($"Support request submitted to the master inbox in {submission.Channel}. Titan replied in-thread.", statusBrush);
+        }
+        catch (Exception)
+        {
+            saveTiming.Checkpoint("save-failed", ("reason", "support-store-write"));
+            SetSupportStatus("Support message could not be saved. Try again in a moment.", SupportErrorBrush);
+        }
     }
 
     private void ClearSupportMessage_Click(object sender, RoutedEventArgs e)
@@ -1281,9 +1381,19 @@ public partial class Window2 : Window
         base.OnClosed(e);
     }
 
+    private void OpenAccountsWorkspace()
+    {
+        OpenModule(ModuleWindowState.CreateAccountsManager(managedAccounts));
+    }
+
     private void OpenContractsWorkspace()
     {
         OpenModule(ModuleWindowState.CreateContracts(contracts));
+    }
+
+    private void OpenPaymentsWorkspace()
+    {
+        OpenModule(ModuleWindowState.CreatePayments(DateTime.Today));
     }
 
     private void OpenContactsWorkspace()
@@ -1291,14 +1401,24 @@ public partial class Window2 : Window
         OpenModule(ModuleWindowState.CreateContacts(contacts));
     }
 
+    private void OpenTextCampaignsWorkspace()
+    {
+        OpenModule(ModuleWindowState.CreateSmsManager(textCampaigns));
+    }
+
+    private void OpenEmailCampaignsWorkspace()
+    {
+        OpenModule(ModuleWindowState.CreateEmailManager(emailCampaigns));
+    }
+
     private void OpenSupportWorkspace()
     {
-        OpenModule(ModuleWindowState.CreateSupport(currentUser, supportSubmissions));
+        OpenModule(ModuleWindowState.CreateSupport(currentUser, supportSubmissions, supportConversationMessages));
     }
 
     private void OpenDataWorkspace()
     {
-        OpenModule(ModuleWindowState.CreateDataWatch());
+        OpenModule(ModuleWindowState.CreateDataWatch(contacts));
     }
 
     private void OpenCalendarWorkspace()
@@ -1320,37 +1440,6 @@ public partial class Window2 : Window
 
 public sealed record PaymentRow(string Date, string Amount, string Method, string Status);
 public sealed record ActivityRow(string Workspace, string Action, string Owner, string Status);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

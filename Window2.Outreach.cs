@@ -176,13 +176,13 @@ public partial class Window2
         => FocusSection(OutreachTrackerSection);
 
     private void OpenContactsDashboard_Click(object sender, RoutedEventArgs e)
-        => FocusSection(ContactsSection);
+        => OpenContactsWorkspace();
 
     private void OpenTextCampaigns_Click(object sender, RoutedEventArgs e)
-        => FocusSection(TextCampaignsSection);
+        => OpenTextCampaignsWorkspace();
 
     private void OpenEmailCampaigns_Click(object sender, RoutedEventArgs e)
-        => FocusSection(EmailCampaignsSection);
+        => OpenEmailCampaignsWorkspace();
 
     private async void SaveTextCampaign_Click(object sender, RoutedEventArgs e)
     {
@@ -532,3 +532,4 @@ public sealed record OutreachTrackingRow(
     string Scheduled,
     string Automation,
     string Status);
+

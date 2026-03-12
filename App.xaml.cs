@@ -9,6 +9,7 @@ public partial class App : Application
 {
     public static CredentialRepository Credentials { get; } = new CredentialRepository();
     public static WorkspaceRepository WorkspaceData { get; } = new WorkspaceRepository();
+    public static BillingRepository BillingData { get; } = new BillingRepository();
     public static CalendarRepository CalendarEvents { get; } = new CalendarRepository();
     public static CalendarSyncCredentialRepository CalendarSyncCredentials { get; } = new CalendarSyncCredentialRepository();
     public static GoogleCalendarSyncService GoogleCalendar { get; } = new GoogleCalendarSyncService();
@@ -28,9 +29,11 @@ public partial class App : Application
             await Task.WhenAll(
                 Credentials.EnsureSeededAsync(),
                 WorkspaceData.EnsureInitializedAsync(),
+                BillingData.EnsureInitializedAsync(),
                 CalendarEvents.EnsureSeededAsync());
             storesTiming.Checkpoint("credentials-ready");
             storesTiming.Checkpoint("workspace-ready");
+            storesTiming.Checkpoint("billing-ready");
             storesTiming.Checkpoint("calendar-ready");
         }
         catch (Exception ex)
@@ -66,3 +69,5 @@ public partial class App : Application
         startupTiming.Checkpoint("login-window-show-called");
     }
 }
+
+
